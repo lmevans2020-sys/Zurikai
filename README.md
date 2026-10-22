@@ -1,1 +1,87 @@
 # Zurikai
+
+A habit and mood journal with a gentle AI coach. Check in once a day (how you feel, which
+habits you kept, a short note), build streaks, and every week get a personal reflection on
+what's working.
+
+Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPhone and Android.
+
+## What's in the app
+
+| Screen | What it does |
+| --- | --- |
+| **Today** | Pick a mood, tick off habits, add a note. Shows your check-in streak and each habit's streak. |
+| **History** | Totals, current and best streak, a 14-day mood chart and every past check-in. |
+| **Coach** | Zurikai Plus: a weekly AI-written reflection on your check-ins. |
+| **Settings** | Add or remove habits, see your plan, erase data. |
+| **Paywall** | Zurikai Plus: $7.99 / month or $39.99 / year. |
+
+Free plan: unlimited check-ins, up to 3 habits. Plus: weekly AI coach and unlimited habits.
+
+Everything is saved on the phone for now; there are no accounts yet.
+
+## Try it on your phone (about 10 minutes)
+
+You need a computer with [Node.js](https://nodejs.org) (the "LTS" download) and the free
+**Expo Go** app on your phone (App Store or Google Play).
+
+1. Download this project (green **Code** button above, then **Download ZIP**) and unzip it.
+2. Open a terminal in the project folder and run:
+   ```bash
+   npm install
+   npx expo start
+   ```
+3. A QR code appears. On iPhone, scan it with the Camera app. On Android, scan it from Expo Go.
+
+The app opens in Expo Go. Edits to the code show up on your phone right away.
+
+### Turning on the AI coach
+
+Without setup the Coach tab still works but writes a simpler, built-in summary. For real AI
+reflections:
+
+1. Create an API key at [console.anthropic.com](https://console.anthropic.com).
+2. Copy `.env.example` to a new file named `.env` and paste the key after `ANTHROPIC_API_KEY=`.
+3. Restart `npx expo start`.
+
+The key stays on the server (`src/app/api/reflection+api.ts`) and is never put inside the app.
+
+## Getting into the App Store and Google Play
+
+| Step | Cost | Notes |
+| --- | --- | --- |
+| Expo account at [expo.dev](https://expo.dev/signup) | Free | Builds the iPhone app in the cloud, so no Mac is needed. |
+| [Apple Developer Program](https://developer.apple.com/programs/) | $99 / year | Required to publish on the App Store. |
+| [Google Play Console](https://play.google.com/console/signup) | $25 once | Required to publish on Google Play. |
+| [RevenueCat](https://www.revenuecat.com) | Free to start | Handles subscriptions on both stores. |
+| Hosting for the AI coach ([EAS Hosting](https://docs.expo.dev/eas/hosting/introduction/)) | Free tier | Then set `EXPO_PUBLIC_API_URL` to its address. |
+
+Still to do before launch:
+
+- **Real payments.** `src/lib/premium.tsx` currently simulates purchases so the flow can be
+  tried in Expo Go. Swap in RevenueCat (`react-native-purchases`) once the store products exist.
+  This needs a development build (`npx eas-cli@latest build --profile development`).
+- **Protect the coach server.** Add sign-in or a per-user limit to the reflection endpoint so
+  only paying users can call it.
+- **App icon and splash screen.** Replace the placeholder images in `assets/`.
+- **Privacy policy and store listing** (screenshots, description). Both stores require them.
+
+Build and submit with:
+
+```bash
+npx eas-cli@latest build --platform all --profile production
+npx eas-cli@latest submit --platform all
+```
+
+## For developers
+
+```bash
+npm run typecheck   # TypeScript
+npm test            # unit tests for streaks and weekly summaries (src/lib/__tests__)
+```
+
+- Screens live in `src/app` (Expo Router). `(tabs)/` holds the four tabs, `paywall.tsx` is a modal.
+- `src/lib/journal-store.tsx` is the on-device data store; `journal-math.ts` holds the pure
+  streak and summary logic.
+- `src/app/api/reflection+api.ts` is the server route that asks Claude for the weekly reflection.
+  `src/lib/coach.ts` calls it and falls back to an offline summary if it can't be reached.
