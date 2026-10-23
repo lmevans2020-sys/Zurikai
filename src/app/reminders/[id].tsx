@@ -185,7 +185,7 @@ export default function RemindersScreen() {
 
       {!remindersSupported() && (
         <ThemedText type="small" color="textSecondary">
-          Reminders go off on your phone. They can't be shown in a web browser.
+          Reminders aren't available here. They work in the Zurikai app on a phone.
         </ThemedText>
       )}
 

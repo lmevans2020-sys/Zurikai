@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { reminderTimes } from '@/lib/reminder-times';
@@ -20,9 +19,24 @@ const NUDGES = [
   'Checking in: is now a good moment?',
 ];
 
-const supported = Platform.OS === 'ios' || Platform.OS === 'android';
+type NotificationsApi = typeof import('@/lib/notifications');
 
-if (supported) {
+// Loaded defensively: if this phone's app shell is missing a notifications piece, reminders
+// are switched off instead of the whole app failing to open.
+function loadNotifications(): NotificationsApi | null {
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null;
+  try {
+    return require('@/lib/notifications') as NotificationsApi;
+  } catch (error) {
+    console.warn('Reminders are unavailable on this device', error);
+    return null;
+  }
+}
+
+const Notifications = loadNotifications();
+const supported = Notifications !== null;
+
+if (Notifications) {
   // Show reminders even while the app is open.
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -40,7 +54,7 @@ export function remindersSupported() {
 
 /** Asks for permission if needed. Returns true when reminders can be shown. */
 export async function ensureReminderPermission(): Promise<boolean> {
-  if (!supported) return false;
+  if (!Notifications) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
@@ -62,7 +76,7 @@ export function syncReminders(habits: Habit[]): Promise<void> {
 let queue: Promise<void> = Promise.resolve();
 
 async function replaceScheduled(habits: Habit[]): Promise<void> {
-  if (!supported) return;
+  if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   const wanted = habits.flatMap((habit) =>
