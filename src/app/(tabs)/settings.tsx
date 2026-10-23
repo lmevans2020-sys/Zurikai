@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
@@ -36,10 +36,24 @@ export default function SettingsScreen() {
     ]);
   }
 
+  // Starts completely fresh: journal, interview answers and the (simulated) Plus plan, then
+  // goes straight to the welcome interview.
+  function eraseEverything() {
+    resetAll();
+    cancelForTesting();
+    router.replace('/welcome');
+  }
+
   function confirmReset() {
-    Alert.alert('Erase all data?', 'This deletes every check-in, habit and reflection on this phone.', [
+    const title = 'Erase all data?';
+    const message = 'This deletes every check-in, habit, reflection and your interview answers on this phone.';
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${title}\n\n${message}`)) eraseEverything();
+      return;
+    }
+    Alert.alert(title, message, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Erase', style: 'destructive', onPress: resetAll },
+      { text: 'Erase', style: 'destructive', onPress: eraseEverything },
     ]);
   }
 
