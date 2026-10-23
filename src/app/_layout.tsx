@@ -8,12 +8,26 @@ import { PremiumProvider } from '@/lib/premium';
 
 SplashScreen.preventAutoHideAsync();
 
-function HideSplashWhenReady() {
-  const { ready } = useJournal();
+// New people go through the welcome interview before they reach the app.
+function AppStack() {
+  const { ready, profile } = useJournal();
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
-  return null;
+
+  // Keep the splash screen up until saved data has loaded, so the interview doesn't flash.
+  if (!ready) return null;
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={profile !== null}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="guides/[id]" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+      </Stack.Protected>
+      <Stack.Screen name="welcome" options={{ gestureEnabled: profile !== null }} />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
@@ -22,11 +36,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <PremiumProvider>
         <JournalProvider>
-          <HideSplashWhenReady />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-          </Stack>
+          <AppStack />
         </JournalProvider>
       </PremiumProvider>
     </ThemeProvider>

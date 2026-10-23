@@ -36,3 +36,20 @@ export type WeekSummary = {
   habits: { name: string; emoji: string; count: number }[];
   notes: { date: string; mood: Mood; note: string }[];
 };
+
+export type GoalId = 'sleep' | 'move' | 'stress' | 'mood' | 'eat' | 'focus' | 'growth';
+export type ObstacleId = 'time' | 'motivation' | 'forgetting' | 'stress' | 'all-or-nothing' | 'distractions';
+export type CoachStyle = 'gentle' | 'direct' | 'cheerleader';
+
+/** Answers from the welcome interview. Used to pick habits, guides and the coach's tone. */
+export type Profile = {
+  name: string;
+  goals: GoalId[];
+  rhythm: 'morning' | 'evening' | 'varies';
+  busyness: 'calm' | 'busy' | 'very-busy';
+  obstacles: ObstacleId[];
+  coachStyle: CoachStyle;
+  /** Free text: anything else they want the coach to know. */
+  about: string;
+  completedAt: string;
+};

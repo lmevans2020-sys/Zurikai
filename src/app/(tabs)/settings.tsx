@@ -6,11 +6,12 @@ import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useJournal } from '@/lib/journal-store';
+import { COACH_STYLES, goalLabels } from '@/content/interview';
 import { FREE_HABIT_LIMIT, PLANS, usePremium } from '@/lib/premium';
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { activeHabits, addHabit, archiveHabit, resetAll } = useJournal();
+  const { activeHabits, profile, addHabit, archiveHabit, resetAll } = useJournal();
   const { isPlus, plan, cancelForTesting } = usePremium();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
@@ -65,6 +66,17 @@ export default function SettingsScreen() {
           </>
         )}
       </Card>
+
+      {profile && (
+        <Card>
+          <ThemedText type="heading">Your goals</ThemedText>
+          <ThemedText color="textSecondary">{goalLabels(profile.goals).join(' · ')}</ThemedText>
+          <ThemedText type="small" color="textSecondary">
+            Coach style: {COACH_STYLES.find((style) => style.id === profile.coachStyle)?.label}
+          </ThemedText>
+          <Button title="Update my answers" variant="secondary" onPress={() => router.push('/welcome')} />
+        </Card>
+      )}
 
       <Card>
         <ThemedText type="heading">Your habits</ThemedText>

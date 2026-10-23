@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-import type { WeekSummary } from '@/lib/types';
+import { GUIDES } from '@/content/guides';
+import { BUSYNESS, COACH_STYLES, goalLabels, OBSTACLES, RHYTHMS } from '@/content/interview';
+import type { Profile, WeekSummary } from '@/lib/types';
 
 // Server-only route: writes the weekly coach reflection with Claude.
 // Needs ANTHROPIC_API_KEY in the server environment (a local .env file in development,
@@ -20,7 +22,14 @@ small, specific suggestion for next week. Use short paragraphs and no headings, 
 
 You are not a therapist and do not diagnose. If the notes mention self-harm, crisis or feeling
 unsafe, gently encourage them to reach out to someone they trust or a local crisis line, and
-keep the rest brief.`;
+keep the rest brief.
+
+You may be told about the person's goals, daily rhythm, usual obstacles and preferred coaching
+style. Connect your reflection to their goals, make your suggestion fit their schedule and
+obstacles, and match the tone they asked for. If one of the app's guides would genuinely help
+with your suggestion, mention it by its exact title (for example: "the guide 'Start smaller than
+you think' in the Learn tab"). Only use titles from this list:
+${GUIDES.map((guide) => `- ${guide.title}`).join('\n')}`;
 
 let client: Anthropic | null = null;
 
@@ -34,6 +43,36 @@ function isWeekSummary(value: unknown): value is WeekSummary {
     Array.isArray(summary.habits) &&
     Array.isArray(summary.notes)
   );
+}
+
+const TONE: Record<Profile['coachStyle'], string> = {
+  gentle: 'Warm, patient and encouraging. Never pushy.',
+  direct: 'Clear, honest and to the point. Kind, but skip the cushioning.',
+  cheerleader: 'Upbeat and celebratory. Make a big deal of their wins.',
+};
+
+/** Profile fields come from the device, so only known values and capped free text are used. */
+function describeProfile(profile: unknown): string | null {
+  if (typeof profile !== 'object' || profile === null) return null;
+  const p = profile as Partial<Profile>;
+  const label = <T extends { id: string; label: string }>(options: T[], id: unknown) =>
+    options.find((option) => option.id === id)?.label;
+  const goals = Array.isArray(p.goals) ? goalLabels(p.goals) : [];
+  const obstacles = Array.isArray(p.obstacles)
+    ? OBSTACLES.filter((obstacle) => p.obstacles!.includes(obstacle.id)).map((obstacle) => obstacle.label)
+    : [];
+  const style = COACH_STYLES.find((option) => option.id === p.coachStyle);
+
+  const lines = [
+    typeof p.name === 'string' && p.name.trim() ? `First name: ${p.name.trim().split(' ')[0].slice(0, 30)}` : null,
+    goals.length ? `Goals: ${goals.join(', ')}` : null,
+    label(RHYTHMS, p.rhythm) ? `Energy: ${label(RHYTHMS, p.rhythm)}` : null,
+    label(BUSYNESS, p.busyness) ? `Typical day: ${label(BUSYNESS, p.busyness)}` : null,
+    obstacles.length ? `What usually gets in the way: ${obstacles.join(', ')}` : null,
+    style ? `Preferred coaching style: ${style.label}. ${TONE[style.id]}` : null,
+    typeof p.about === 'string' && p.about.trim() ? `In their own words: ${p.about.trim().slice(0, 300)}` : null,
+  ].filter(Boolean);
+  return lines.length ? lines.join('\n') : null;
 }
 
 function describeWeek(summary: WeekSummary): string {
@@ -60,14 +99,20 @@ function describeWeek(summary: WeekSummary): string {
     .join('\n');
 }
 
+function buildPrompt(summary: WeekSummary, profile: unknown): string {
+  const about = describeProfile(profile);
+  return about ? `About them:\n${about}\n\nThis week:\n${describeWeek(summary)}` : describeWeek(summary);
+}
+
 export async function POST(request: Request): Promise<Response> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json({ error: 'The AI coach is not set up on this server yet.' }, { status: 503 });
   }
 
   let summary: unknown;
+  let profile: unknown;
   try {
-    ({ summary } = (await request.json()) as { summary: unknown });
+    ({ summary, profile } = (await request.json()) as { summary: unknown; profile?: unknown });
   } catch {
     return Response.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
@@ -85,7 +130,7 @@ export async function POST(request: Request): Promise<Response> {
       fallbacks: 'default',
       output_config: { effort: 'low' },
       system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: describeWeek(summary) }],
+      messages: [{ role: 'user', content: buildPrompt(summary, profile) }],
     });
 
     if (response.stop_reason === 'refusal') {

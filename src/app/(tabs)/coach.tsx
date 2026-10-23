@@ -15,7 +15,7 @@ function weekLabel(weekStart: string) {
 }
 
 export default function CoachScreen() {
-  const { entries, habits, reflections, today, saveReflection } = useJournal();
+  const { entries, habits, profile, reflections, today, saveReflection } = useJournal();
   const { isPlus } = usePremium();
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,7 @@ export default function CoachScreen() {
   async function reflect() {
     setLoading(true);
     try {
-      saveReflection(await requestReflection(summary));
+      saveReflection(await requestReflection(summary, profile));
     } finally {
       setLoading(false);
     }

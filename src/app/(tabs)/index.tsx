@@ -1,10 +1,13 @@
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { MoodPicker } from '@/components/mood';
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
+import { tipForDate } from '@/content/guides';
+import { recommendedGuideIds } from '@/content/interview';
 import { useTheme } from '@/hooks/use-theme';
 import { checkInStreak, habitStreak } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
@@ -19,7 +22,7 @@ function greeting() {
 
 export default function TodayScreen() {
   const theme = useTheme();
-  const { ready, today, entries, activeHabits, saveEntry } = useJournal();
+  const { ready, today, entries, activeHabits, profile, saveEntry } = useJournal();
   const existing = entries[today];
 
   const [mood, setMood] = useState<Mood | null>(null);
@@ -36,6 +39,8 @@ export default function TodayScreen() {
   }, [ready, existing]);
 
   const streak = checkInStreak(entries, today);
+  const tip = tipForDate(today, recommendedGuideIds(profile));
+  const firstName = profile?.name.split(' ')[0];
   const dirty =
     mood !== (existing?.mood ?? null) ||
     note.trim() !== (existing?.note ?? '') ||
@@ -60,7 +65,7 @@ export default function TodayScreen() {
         <ThemedText type="label" color="textSecondary">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
         </ThemedText>
-        <ThemedText type="title">{greeting()}</ThemedText>
+        <ThemedText type="title">{firstName ? `${greeting()}, ${firstName}` : greeting()}</ThemedText>
       </View>
 
       <Card style={[styles.streak, { backgroundColor: theme.accent, borderColor: theme.accent }]}>
@@ -74,6 +79,21 @@ export default function TodayScreen() {
           </ThemedText>
         </View>
       </Card>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityHint="Opens the guide for this tip"
+        onPress={() => router.push({ pathname: '/guides/[id]', params: { id: tip.guideId } })}
+        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+        <Card style={styles.tip}>
+          <Text style={styles.tipEmoji}>💡</Text>
+          <View style={{ flex: 1, gap: Spacing.half }}>
+            <ThemedText type="label" color="textSecondary">Tip of the day</ThemedText>
+            <ThemedText>{tip.text}</ThemedText>
+            <ThemedText type="small" color="accent" style={{ fontWeight: '600' }}>Read more ›</ThemedText>
+          </View>
+        </Card>
+      </Pressable>
 
       <Card>
         <ThemedText type="heading">How are you feeling?</ThemedText>
@@ -154,6 +174,8 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   streak: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   streakEmoji: { fontSize: 36 },
+  tip: { flexDirection: 'row', gap: Spacing.three },
+  tipEmoji: { fontSize: 28 },
   habit: {
     flexDirection: 'row',
     alignItems: 'center',

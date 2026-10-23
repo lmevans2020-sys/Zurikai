@@ -10,9 +10,11 @@ Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPho
 
 | Screen | What it does |
 | --- | --- |
-| **Today** | Pick a mood, tick off habits, add a note. Shows your check-in streak and each habit's streak. |
+| **Welcome interview** | First open only: name, goals, daily rhythm, what gets in the way, coaching style. Suggests starter habits for those goals. Can be retaken from Settings. |
+| **Today** | Tip of the day (matched to your goals), mood, habits, a note, and your streaks. |
 | **History** | Totals, current and best streak, a 14-day mood chart and every past check-in. |
-| **Coach** | Zurikai Plus: a weekly AI-written reflection on your check-ins. |
+| **Coach** | Zurikai Plus: a weekly AI-written reflection on your check-ins, shaped by your goals and preferred coaching style. |
+| **Learn** | 13 short guides on building habits, with the ones that fit your goals at the top. |
 | **Settings** | Add or remove habits, see your plan, erase data. |
 | **Paywall** | Zurikai Plus: $7.99 / month or $39.99 / year. |
 
@@ -80,7 +82,10 @@ npm run typecheck   # TypeScript
 npm test            # unit tests for streaks and weekly summaries (src/lib/__tests__)
 ```
 
-- Screens live in `src/app` (Expo Router). `(tabs)/` holds the four tabs, `paywall.tsx` is a modal.
+- Screens live in `src/app` (Expo Router). `(tabs)/` holds the five tabs, `welcome.tsx` is the
+  first-run interview, `guides/[id].tsx` shows one guide, and `paywall.tsx` is a modal.
+- Guides, daily tips and the interview questions are plain data in `src/content/`, so new content
+  can be added without touching screen code.
 - `src/lib/journal-store.tsx` is the on-device data store; `journal-math.ts` holds the pure
   streak and summary logic.
 - `src/app/api/reflection+api.ts` is the server route that asks Claude for the weekly reflection.
