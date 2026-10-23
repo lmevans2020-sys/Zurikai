@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { toDateKey } from '@/lib/journal-math';
-import type { ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection } from '@/lib/types';
+import type { ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
@@ -14,6 +14,7 @@ type JournalData = {
   entries: Record<string, Entry>;
   reflections: Record<string, Reflection>;
   chat: ChatMessage[];
+  restDays: RestDays;
 };
 
 // Keep the saved conversation small; only the latest turns are sent to the coach anyway.
@@ -33,6 +34,7 @@ function starterData(): JournalData {
     entries: {},
     reflections: {},
     chat: [],
+    restDays: {},
   };
 }
 
@@ -41,7 +43,11 @@ type JournalContextValue = JournalData & {
   today: string;
   activeHabits: Habit[];
   saveEntry: (date: string, entry: { mood: Mood; habitIds: string[]; note: string }) => void;
-  addHabit: (name: string, emoji: string) => void;
+  addHabit: (name: string, emoji: string, options?: Pick<Habit, 'quit' | 'days'>) => void;
+  /** Changes a habit's name, emoji, planned days or build/quit type. */
+  updateHabit: (id: string, changes: Partial<Pick<Habit, 'name' | 'emoji' | 'quit' | 'days'>>) => void;
+  /** Marks or unmarks a day as a rest day. */
+  setRestDay: (date: string, resting: boolean) => void;
   archiveHabit: (id: string) => void;
   /** Pass null to turn a habit's reminders off. */
   setHabitReminders: (id: string, reminders: HabitReminders | null) => void;
@@ -95,14 +101,31 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const addHabit = useCallback<JournalContextValue['addHabit']>((name, emoji) => {
+  const addHabit = useCallback<JournalContextValue['addHabit']>((name, emoji, options) => {
     const habit: Habit = {
       id: newId(),
       name: name.trim(),
       emoji: emoji.trim() || '✨',
       createdAt: new Date().toISOString(),
+      ...options,
     };
     setData((current) => ({ ...current, habits: [...current.habits, habit] }));
+  }, []);
+
+  const updateHabit = useCallback<JournalContextValue['updateHabit']>((id, changes) => {
+    setData((current) => ({
+      ...current,
+      habits: current.habits.map((habit) => (habit.id === id ? { ...habit, ...changes } : habit)),
+    }));
+  }, []);
+
+  const setRestDay = useCallback<JournalContextValue['setRestDay']>((date, resting) => {
+    setData((current) => {
+      const restDays = { ...current.restDays };
+      if (resting) restDays[date] = true;
+      else delete restDays[date];
+      return { ...current, restDays };
+    });
   }, []);
 
   // Archived rather than deleted so past check-ins keep their history.
@@ -166,6 +189,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       activeHabits: data.habits.filter((habit) => !habit.archived),
       saveEntry,
       addHabit,
+      updateHabit,
+      setRestDay,
       archiveHabit,
       setHabitReminders,
       saveReflection,
@@ -180,6 +205,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       today,
       saveEntry,
       addHabit,
+      updateHabit,
+      setRestDay,
       archiveHabit,
       setHabitReminders,
       saveReflection,

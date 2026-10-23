@@ -19,6 +19,12 @@ const NUDGES = [
   'Checking in: is now a good moment?',
 ];
 
+const QUIT_NUDGES = [
+  'You’re doing great. One more day free.',
+  'Craving? Take three slow breaths and let it pass.',
+  'Every day you stay away counts.',
+];
+
 type NotificationsApi = typeof import('@/lib/notifications');
 
 // Loaded defensively: if this phone's app shell is missing a notifications piece, reminders
@@ -77,9 +83,12 @@ async function replaceScheduled(habits: Habit[]): Promise<void> {
   if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  const wanted = habits.flatMap((habit) =>
-    habit.archived ? [] : reminderTimes(habit.reminders).map((time) => ({ habit, time })),
-  );
+  // Habits planned for some days only get a weekly reminder on each of those days.
+  const wanted = habits.flatMap((habit) => {
+    if (habit.archived) return [];
+    const days = habit.days?.length && habit.days.length < 7 ? habit.days : [null];
+    return reminderTimes(habit.reminders).flatMap((time) => days.map((day) => ({ habit, time, day })));
+  });
   if (wanted.length === 0) return;
 
   const permission = await Notifications.getPermissionsAsync();
@@ -94,15 +103,20 @@ async function replaceScheduled(habits: Habit[]): Promise<void> {
   }
 
   await Promise.all(
-    wanted.slice(0, MAX_SCHEDULED).map(({ habit, time }, index) => {
+    wanted.slice(0, MAX_SCHEDULED).map(({ habit, time, day }, index) => {
       const [hour, minute] = time.split(':').map(Number);
+      const types = Notifications.SchedulableTriggerInputTypes;
       return Notifications.scheduleNotificationAsync({
         content: {
           title: `${habit.emoji} ${habit.name}`,
-          body: NUDGES[index % NUDGES.length],
+          body: habit.quit ? QUIT_NUDGES[index % QUIT_NUDGES.length] : NUDGES[index % NUDGES.length],
           data: { habitId: habit.id },
         },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL_ID },
+        // Weekday numbers here run 1 (Sunday) to 7 (Saturday).
+        trigger:
+          day === null
+            ? { type: types.DAILY, hour, minute, channelId: CHANNEL_ID }
+            : { type: types.WEEKLY, weekday: day + 1, hour, minute, channelId: CHANNEL_ID },
       });
     }),
   );

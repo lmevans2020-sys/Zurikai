@@ -1,7 +1,7 @@
 // Pure date, streak and summary helpers. No React or native imports, so they run in plain
 // Node for the unit tests in __tests__.
 
-import type { Entry, Habit, WeekSummary } from './types.ts';
+import type { Entry, Habit, RestDays, WeekSummary } from './types.ts';
 
 /** Local calendar date as YYYY-MM-DD. */
 export function toDateKey(date: Date): string {
@@ -28,39 +28,128 @@ export function startOfWeek(key: string): string {
   return addDays(key, day === 0 ? -6 : 1 - day);
 }
 
+// Streaks only look back this far, which keeps them fast and bounded.
+const MAX_STREAK_LOOKBACK = 3660;
+
+/** Most rest days allowed in one Monday-to-Sunday week. */
+export const REST_DAYS_PER_WEEK = 2;
+
 /**
- * Consecutive days ending today (or yesterday, so the streak isn't shown as broken before
- * today's check-in) for which `hasDay` is true.
+ * Counts consecutive days ending today. Each day is "done" (counts), "skip" (neither counts nor
+ * breaks the streak, e.g. a rest day) or "missed" (ends it). Today only counts once it's done,
+ * so the streak isn't shown as broken before today's check-in.
  */
-function streakEndingAt(today: string, hasDay: (key: string) => boolean): number {
-  let cursor = hasDay(today) ? today : addDays(today, -1);
+function streakEndingAt(today: string, dayStatus: (key: string) => 'done' | 'skip' | 'missed'): number {
   let count = 0;
-  while (hasDay(cursor)) {
-    count += 1;
-    cursor = addDays(cursor, -1);
+  for (let i = 0; i < MAX_STREAK_LOOKBACK; i++) {
+    const key = addDays(today, -i);
+    const status = dayStatus(key);
+    if (status === 'done') count += 1;
+    else if (status === 'missed' && i > 0) break;
   }
   return count;
 }
 
-export function checkInStreak(entries: Record<string, Entry>, today: string): number {
-  return streakEndingAt(today, (key) => key in entries);
+export function checkInStreak(entries: Record<string, Entry>, today: string, restDays: RestDays = {}): number {
+  return streakEndingAt(today, (key) => (key in entries ? 'done' : restDays[key] ? 'skip' : 'missed'));
 }
 
-export function habitStreak(entries: Record<string, Entry>, habitId: string, today: string): number {
-  return streakEndingAt(today, (key) => entries[key]?.habitIds.includes(habitId) ?? false);
+/** Whether a habit is planned for this day of the week. */
+export function isPlannedOn(habit: Habit, key: string): boolean {
+  return !habit.days || habit.days.length === 0 || habit.days.includes(fromDateKey(key).getDay());
 }
 
-export function longestCheckInStreak(entries: Record<string, Entry>): number {
+export function habitStreak(
+  entries: Record<string, Entry>,
+  habit: Habit,
+  today: string,
+  restDays: RestDays = {},
+): number {
+  const started = toDateKey(new Date(habit.createdAt));
+  return streakEndingAt(today, (key) => {
+    if (entries[key]?.habitIds.includes(habit.id)) return 'done';
+    if (key < started) return 'missed';
+    return restDays[key] || !isPlannedOn(habit, key) ? 'skip' : 'missed';
+  });
+}
+
+export function longestCheckInStreak(entries: Record<string, Entry>, restDays: RestDays = {}): number {
   const keys = Object.keys(entries).sort();
   let best = 0;
   let run = 0;
   let previous: string | null = null;
   for (const key of keys) {
-    run = previous !== null && addDays(previous, 1) === key ? run + 1 : 1;
+    let bridged = previous !== null;
+    for (let gap = previous ? addDays(previous, 1) : key; bridged && gap < key; gap = addDays(gap, 1)) {
+      if (!restDays[gap]) bridged = false;
+    }
+    run = bridged ? run + 1 : 1;
     best = Math.max(best, run);
     previous = key;
   }
   return best;
+}
+
+/** Rest days already used in the week (Monday to Sunday) that contains `key`. */
+export function restDaysUsedInWeek(restDays: RestDays, key: string): number {
+  const monday = startOfWeek(key);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i)).filter((day) => restDays[day]).length;
+}
+
+export type MoodTrend = {
+  habit: Habit;
+  /** Average mood (1-5) on check-in days with and without the habit. */
+  withHabit: number;
+  withoutHabit: number;
+  daysWith: number;
+  daysWithout: number;
+};
+
+/** Days of each kind needed before a trend is shown, so one odd day doesn't decide it. */
+export const MIN_TREND_DAYS = 3;
+
+/**
+ * For each habit, compares mood on check-in days when it was done against planned days when it
+ * wasn't, over the last `windowDays`. Strongest positive link first.
+ */
+export function moodTrends(
+  entries: Record<string, Entry>,
+  habits: Habit[],
+  today: string,
+  windowDays = 60,
+): MoodTrend[] {
+  const from = addDays(today, -windowDays + 1);
+  const recent = Object.values(entries).filter((entry) => entry.date >= from && entry.date <= today);
+  const average = (list: Entry[]) => list.reduce((sum, entry) => sum + entry.mood, 0) / list.length;
+
+  return habits
+    .flatMap((habit) => {
+      const planned = recent.filter((entry) => isPlannedOn(habit, entry.date));
+      const done = planned.filter((entry) => entry.habitIds.includes(habit.id));
+      const notDone = planned.filter((entry) => !entry.habitIds.includes(habit.id));
+      if (done.length < MIN_TREND_DAYS || notDone.length < MIN_TREND_DAYS) return [];
+      return [
+        {
+          habit,
+          withHabit: Math.round(average(done) * 10) / 10,
+          withoutHabit: Math.round(average(notDone) * 10) / 10,
+          daysWith: done.length,
+          daysWithout: notDone.length,
+        },
+      ];
+    })
+    .sort((a, b) => b.withHabit - b.withoutHabit - (a.withHabit - a.withoutHabit));
+}
+
+/** Average mood for each day of the week (0 = Sunday), null where there are no check-ins. */
+export function moodByWeekday(entries: Record<string, Entry>): (number | null)[] {
+  const totals = Array.from({ length: 7 }, () => ({ sum: 0, count: 0 }));
+  for (const entry of Object.values(entries)) {
+    const day = fromDateKey(entry.date).getDay();
+    totals[day].sum += entry.mood;
+    totals[day].count += 1;
+  }
+  return totals.map(({ sum, count }) => (count ? Math.round((sum / count) * 10) / 10 : null));
 }
 
 /** The last `count` days ending at `today`, oldest first, with the entry for each if any. */

@@ -9,7 +9,14 @@ export type Habit = {
   archived?: boolean;
   /** Daily phone reminders for this habit. Missing or undefined means none. */
   reminders?: HabitReminders;
+  /** Days of the week it's planned for, 0 = Sunday. Missing means every day. */
+  days?: number[];
+  /** A habit to break (e.g. smoking): ticking it means "I stayed away from it today". */
+  quit?: boolean;
 };
+
+/** Days marked as rest days: streaks neither grow nor break on them. Keyed by YYYY-MM-DD. */
+export type RestDays = Record<string, true>;
 
 /**
  * Either specific times of day ("08:00", "19:00"), or a repeat such as every 2 hours from

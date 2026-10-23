@@ -16,6 +16,7 @@ export default function SettingsScreen() {
   const { isPlus, plan, cancelForTesting } = usePremium();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
+  const [quit, setQuit] = useState(false);
 
   const atLimit = !isPlus && activeHabits.length >= FREE_HABIT_LIMIT;
 
@@ -25,9 +26,10 @@ export default function SettingsScreen() {
       return;
     }
     if (!name.trim()) return;
-    addHabit(name, emoji);
+    addHabit(name, emoji, quit ? { quit } : undefined);
     setName('');
     setEmoji('');
+    setQuit(false);
   }
 
   function confirmRemove(id: string, habitName: string) {
@@ -95,16 +97,19 @@ export default function SettingsScreen() {
 
       <Card>
         <ThemedText type="heading">Your habits</ThemedText>
-        <ThemedText type="small" color="textSecondary">Tap a habit to set daily reminders.</ThemedText>
+        <ThemedText type="small" color="textSecondary">Tap a habit to change its days, reminders or type.</ThemedText>
         {activeHabits.map((habit) => (
           <View key={habit.id} style={[styles.habitRow, { borderColor: theme.border }]}>
             <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityHint="Set reminders for this habit"
+              accessibilityHint="Change this habit's days, type or reminders"
               style={{ flex: 1, gap: 2 }}
-              onPress={() => router.push({ pathname: '/reminders/[id]', params: { id: habit.id } })}>
+              onPress={() => router.push({ pathname: '/habits/[id]', params: { id: habit.id } })}>
               <ThemedText>{habit.name}</ThemedText>
+              <ThemedText type="small" color="textSecondary">
+                {[habit.quit ? 'Quitting' : null, describeDays(habit.days)].filter(Boolean).join(' · ')}
+              </ThemedText>
               <ThemedText type="small" color={habit.reminders ? 'textSecondary' : 'accent'}>
                 {habit.reminders ? `⏰ ${describeReminders(habit.reminders)}` : '⏰ Set a reminder'}
               </ThemedText>
@@ -115,6 +120,20 @@ export default function SettingsScreen() {
           </View>
         ))}
 
+        <View style={styles.kindRow}>
+          {([false, true] as const).map((value) => (
+            <Pressable
+              key={String(value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: quit === value }}
+              onPress={() => setQuit(value)}
+              style={[styles.kind, { borderColor: theme.accent, backgroundColor: quit === value ? theme.accent : theme.background }]}>
+              <ThemedText type="small" style={{ fontWeight: '600', color: quit === value ? theme.accentText : theme.accent }}>
+                {value ? '🚭 A habit to quit' : '🌱 A habit to build'}
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
         <View style={styles.addRow}>
           <TextInput
             value={emoji}
@@ -127,7 +146,7 @@ export default function SettingsScreen() {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="New habit, e.g. Read 10 pages"
+            placeholder={quit ? 'e.g. Smoking, Late-night scrolling' : 'New habit, e.g. Read 10 pages'}
             placeholderTextColor={theme.textSecondary}
             maxLength={40}
             returnKeyType="done"
@@ -159,7 +178,17 @@ export default function SettingsScreen() {
   );
 }
 
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function describeDays(days: number[] | undefined): string {
+  if (!days?.length || days.length === 7) return 'Every day';
+  // Monday first.
+  return [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((day) => SHORT_DAYS[day]).join(', ');
+}
+
 const styles = StyleSheet.create({
+  kindRow: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.two, flexWrap: 'wrap' },
+  kind: { borderWidth: 1, borderRadius: Radius.large, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   habitRow: {
     flexDirection: 'row',
     alignItems: 'center',

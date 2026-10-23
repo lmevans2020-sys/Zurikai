@@ -9,7 +9,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { tipForDate } from '@/content/guides';
 import { recommendedGuideIds } from '@/content/interview';
 import { useTheme } from '@/hooks/use-theme';
-import { checkInStreak, habitStreak } from '@/lib/journal-math';
+import { REST_DAYS_PER_WEEK, checkInStreak, habitStreak, isPlannedOn, restDaysUsedInWeek } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
 import type { Mood } from '@/lib/types';
 
@@ -22,7 +22,7 @@ function greeting() {
 
 export default function TodayScreen() {
   const theme = useTheme();
-  const { ready, today, entries, activeHabits, profile, saveEntry } = useJournal();
+  const { ready, today, entries, activeHabits, profile, restDays, saveEntry, setRestDay } = useJournal();
   const existing = entries[today];
 
   const [mood, setMood] = useState<Mood | null>(null);
@@ -38,7 +38,11 @@ export default function TodayScreen() {
     setNote(existing.note);
   }, [ready, existing]);
 
-  const streak = checkInStreak(entries, today);
+  const streak = checkInStreak(entries, today, restDays);
+  const resting = restDays[today] === true;
+  const restLeft = REST_DAYS_PER_WEEK - restDaysUsedInWeek(restDays, today);
+  const plannedToday = activeHabits.filter((habit) => isPlannedOn(habit, today));
+  const notToday = activeHabits.filter((habit) => !isPlannedOn(habit, today));
   const tip = tipForDate(today, recommendedGuideIds(profile));
   const firstName = profile?.name.split(' ')[0];
   const dirty =
@@ -75,7 +79,11 @@ export default function TodayScreen() {
             {streak > 0 ? `${streak} day streak` : 'Start your streak'}
           </ThemedText>
           <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.85 }}>
-            {existing ? 'You checked in today. See you tomorrow.' : 'Check in today to keep it going.'}
+            {resting
+              ? 'Rest day. Your streaks are safe.'
+              : existing
+                ? 'You checked in today. See you tomorrow.'
+                : 'Check in today to keep it going.'}
           </ThemedText>
         </View>
       </Card>
@@ -111,9 +119,9 @@ export default function TodayScreen() {
         {activeHabits.length === 0 && (
           <ThemedText color="textSecondary">Add a habit in Settings to start tracking it.</ThemedText>
         )}
-        {activeHabits.map((habit) => {
+        {plannedToday.map((habit) => {
           const done = habitIds.includes(habit.id);
-          const days = habitStreak(entries, habit.id, today);
+          const days = habitStreak(entries, habit, today, restDays);
           return (
             <Pressable
               key={habit.id}
@@ -127,10 +135,17 @@ export default function TodayScreen() {
               <Text style={styles.habitEmoji}>{habit.emoji}</Text>
               <View style={{ flex: 1 }}>
                 <ThemedText>{habit.name}</ThemedText>
-                {days > 0 && (
+                {habit.quit ? (
                   <ThemedText type="small" color="textSecondary">
-                    {days} day{days === 1 ? '' : 's'} in a row
+                    {days > 0 ? `${days} day${days === 1 ? '' : 's'} free 💪` : 'Tick it if you stayed away today'}
                   </ThemedText>
+                ) : (
+                  days > 0 && (
+                    <ThemedText type="small" color="textSecondary">
+                      {days} {habit.days?.length ? 'planned day' : 'day'}
+                      {days === 1 ? '' : 's'} in a row
+                    </ThemedText>
+                  )
                 )}
               </View>
               <View style={[styles.check, { borderColor: theme.accent, backgroundColor: done ? theme.accent : 'transparent' }]}>
@@ -139,6 +154,11 @@ export default function TodayScreen() {
             </Pressable>
           );
         })}
+        {notToday.length > 0 && (
+          <ThemedText type="small" color="textSecondary">
+            Not planned today: {notToday.map((habit) => `${habit.emoji} ${habit.name}`).join(', ')}
+          </ThemedText>
+        )}
         {activeHabits.length > 0 && !activeHabits.some((habit) => habit.reminders) && (
           <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.navigate('/settings')}>
             <ThemedText type="small" color="accent" style={{ fontWeight: '600' }}>
@@ -174,6 +194,33 @@ export default function TodayScreen() {
           Pick a mood to save today's check-in.
         </ThemedText>
       )}
+
+      <Card style={styles.rest}>
+        <Text style={styles.tipEmoji}>😌</Text>
+        <View style={{ flex: 1, gap: Spacing.half }}>
+          <ThemedText type="heading">{resting ? 'Taking a rest day' : 'Need a break?'}</ThemedText>
+          <ThemedText type="small" color="textSecondary">
+            {resting
+              ? "Today won't count against any streak. Rest well."
+              : `Take a rest day and your streaks stay safe. ${restLeft > 0 ? `${restLeft} of ${REST_DAYS_PER_WEEK}` : 'None'} left this week.`}
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            disabled={!resting && restLeft <= 0}
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              setRestDay(today, !resting);
+            }}>
+            <ThemedText
+              type="small"
+              color={!resting && restLeft <= 0 ? 'textSecondary' : 'accent'}
+              style={{ fontWeight: '600' }}>
+              {resting ? 'Undo rest day' : 'Make today a rest day'}
+            </ThemedText>
+          </Pressable>
+        </View>
+      </Card>
     </Screen>
   );
 }
@@ -183,6 +230,7 @@ const styles = StyleSheet.create({
   streakEmoji: { fontSize: 36 },
   tip: { flexDirection: 'row', gap: Spacing.three },
   tipEmoji: { fontSize: 28 },
+  rest: { flexDirection: 'row', gap: Spacing.three },
   habit: {
     flexDirection: 'row',
     alignItems: 'center',

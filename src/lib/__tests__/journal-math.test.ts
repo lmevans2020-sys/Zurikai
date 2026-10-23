@@ -5,8 +5,11 @@ import {
   addDays,
   checkInStreak,
   habitStreak,
+  isPlannedOn,
   longestCheckInStreak,
+  moodTrends,
   offlineReflection,
+  restDaysUsedInWeek,
   startOfWeek,
   summarizeWeek,
 } from '../journal-math.ts';
@@ -54,8 +57,8 @@ test('habit streak only counts days the habit was done', () => {
     entry('2026-10-21', 3, ['move']),
     entry('2026-10-22', 3, ['water', 'move']),
   );
-  assert.equal(habitStreak(entries, 'move', '2026-10-22'), 3);
-  assert.equal(habitStreak(entries, 'water', '2026-10-22'), 1);
+  assert.equal(habitStreak(entries, habits[1], '2026-10-22'), 3);
+  assert.equal(habitStreak(entries, habits[0], '2026-10-22'), 1);
 });
 
 test('longest streak finds the best run anywhere in history', () => {
@@ -94,4 +97,44 @@ test('offline reflection handles empty and busy weeks', () => {
   assert.match(text, /2 of 7 days/);
   assert.match(text, /Wednesday felt best and Monday was the hardest/);
   assert.match(text, /Drink water/);
+});
+
+test('rest days keep check-in streaks alive without adding to them', () => {
+  const entries = byDate(entry('2026-10-19', 4), entry('2026-10-21', 4), entry('2026-10-22', 3));
+  assert.equal(checkInStreak(entries, '2026-10-22'), 2);
+  assert.equal(checkInStreak(entries, '2026-10-22', { '2026-10-20': true }), 3);
+  assert.equal(longestCheckInStreak(entries, { '2026-10-20': true }), 3);
+  // Resting today keeps yesterday's streak showing.
+  assert.equal(checkInStreak(byDate(entry('2026-10-21', 4)), '2026-10-23', { '2026-10-22': true, '2026-10-23': true }), 1);
+});
+
+test('habits planned for some days only skip their days off', () => {
+  // Gym on Monday, Wednesday, Friday. 2026-10-19 is a Monday.
+  const gym: Habit = { id: 'gym', name: 'Gym', emoji: '🏋️', createdAt: '2026-01-01', days: [1, 3, 5] };
+  const entries = byDate(entry('2026-10-19', 4, ['gym']), entry('2026-10-21', 4, ['gym']), entry('2026-10-22', 3));
+  assert.equal(isPlannedOn(gym, '2026-10-22'), false);
+  assert.equal(habitStreak(entries, gym, '2026-10-22'), 2);
+  // Friday not done yet today: streak still shows 2; Saturday after a missed Friday: broken.
+  assert.equal(habitStreak(entries, gym, '2026-10-23'), 2);
+  assert.equal(habitStreak(entries, gym, '2026-10-24'), 0);
+});
+
+test('rest days are counted per Monday-to-Sunday week', () => {
+  const rest = { '2026-10-19': true, '2026-10-25': true, '2026-10-26': true } as const;
+  assert.equal(restDaysUsedInWeek(rest, '2026-10-22'), 2);
+  assert.equal(restDaysUsedInWeek(rest, '2026-10-27'), 1);
+});
+
+test('mood trends compare days with and without each habit', () => {
+  const days = ['2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15'];
+  const entries = byDate(
+    ...days.map((date, i) => (i < 3 ? entry(date, 5, ['move']) : entry(date, 2, ['water']))),
+  );
+  const trends = moodTrends(entries, habits, '2026-10-15');
+  assert.equal(trends.length, 2);
+  assert.equal(trends[0].habit.id, 'move');
+  assert.equal(trends[0].withHabit, 5);
+  assert.equal(trends[0].withoutHabit, 2);
+  // Too few days: no trend.
+  assert.equal(moodTrends(byDate(entry('2026-10-15', 5, ['move'])), habits, '2026-10-15').length, 0);
 });

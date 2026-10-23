@@ -19,7 +19,7 @@ function AppStack() {
   // Keep the phone's scheduled reminders in step with the habits. Only re-run when a habit's
   // name or reminders change, not on every check-in.
   const reminderKey = useMemo(
-    () => JSON.stringify(activeHabits.map(({ id, name, emoji, reminders }) => [id, name, emoji, reminders])),
+    () => JSON.stringify(activeHabits.map(({ id, name, emoji, reminders, days, quit }) => [id, name, emoji, reminders, days, quit])),
     [activeHabits],
   );
   useEffect(() => {
@@ -37,6 +37,7 @@ function AppStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="guides/[id]" />
         <Stack.Screen name="coach-chat" />
+        <Stack.Screen name="habits/[id]" />
         <Stack.Screen name="reminders/[id]" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack.Protected>
