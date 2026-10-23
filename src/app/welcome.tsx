@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     gap: Spacing.one,
   },
-  logo: { width: 260, height: 260 * (366 / 492) },
+  logo: { width: 260, height: 260 * (739 / 984) },
   input: { borderWidth: 1, borderRadius: Radius.small, paddingHorizontal: Spacing.three, height: 50, fontSize: 16 },
   multiline: { height: 96, paddingTop: Spacing.three, textAlignVertical: 'top' },
   footer: {
