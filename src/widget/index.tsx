@@ -1,3 +1,6 @@
+'use no memo';
+// The widget library draws these components itself and breaks if the React Compiler rewrites them.
+
 import { Platform } from 'react-native';
 
 import { HabitsWidget } from '@/widget/habits-widget';

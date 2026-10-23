@@ -60,9 +60,9 @@
               "name": "Habits",
               "label": "SteadyThrive habits",
               "description": "Tick off today's habits from your home screen",
-              "minWidth": "250dp",
-              "minHeight": "180dp",
-              "targetCellWidth": 4,
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
               "targetCellHeight": 2,
               "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000

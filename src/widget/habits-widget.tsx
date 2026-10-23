@@ -1,3 +1,6 @@
+'use no memo';
+// The widget library draws these components itself and breaks if the React Compiler rewrites them.
+
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 
 // The Android home-screen widget: today's habits, each tappable to tick it off, and the
