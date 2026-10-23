@@ -13,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 function AppStack() {
   const { ready, profile, activeHabits } = useJournal();
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
   // Keep the phone's scheduled reminders in step with the habits. Only re-run when a habit's

@@ -26,7 +26,17 @@ type NotificationsApi = typeof import('@/lib/notifications');
 function loadNotifications(): NotificationsApi | null {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null;
   try {
-    return require('@/lib/notifications') as NotificationsApi;
+    const api = require('@/lib/notifications') as NotificationsApi;
+    // Show reminders even while the app is open.
+    api.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    return api;
   } catch (error) {
     console.warn('Reminders are unavailable on this device', error);
     return null;
@@ -35,18 +45,6 @@ function loadNotifications(): NotificationsApi | null {
 
 const Notifications = loadNotifications();
 const supported = Notifications !== null;
-
-if (Notifications) {
-  // Show reminders even while the app is open.
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
-}
 
 export function remindersSupported() {
   return supported;
