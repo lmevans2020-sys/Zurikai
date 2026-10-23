@@ -15,6 +15,7 @@ import {
   recentDays,
   shareableSummary,
 } from '@/lib/journal-math';
+import { badgeStatus } from '@/lib/badges';
 import { useJournal } from '@/lib/journal-store';
 import { usePremium } from '@/lib/premium';
 
@@ -22,7 +23,8 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 
 export default function HistoryScreen() {
   const theme = useTheme();
-  const { entries, habits, activeHabits, today, restDays } = useJournal();
+  const { entries, habits, activeHabits, today, restDays, finishedChallenges } = useJournal();
+  const badges = badgeStatus({ entries, habits, restDays, finishedChallenges });
   const { isPlus } = usePremium();
   const trends = moodTrends(entries, activeHabits, today).slice(0, 4);
   const weekdays = moodByWeekday(entries);
@@ -67,6 +69,27 @@ export default function HistoryScreen() {
           <ThemedText type="title">{longestCheckInStreak(entries, restDays)}</ThemedText>
         </Card>
       </View>
+
+      <Card>
+        <ThemedText type="heading">
+          🏅 Badges · {badges.filter((badge) => badge.earned).length} of {badges.length}
+        </ThemedText>
+        <View style={styles.badges}>
+          {badges.map((badge) => (
+            <View
+              key={badge.id}
+              style={[styles.badge, { opacity: badge.earned ? 1 : 0.4 }]}
+              accessible
+              accessibilityLabel={`${badge.title}: ${badge.detail} ${badge.earned ? 'Earned.' : 'Not earned yet.'}`}>
+              <Text style={{ fontSize: 30 }}>{badge.earned ? badge.emoji : '🔒'}</Text>
+              <ThemedText type="small" style={{ textAlign: 'center', fontWeight: '600' }}>{badge.title}</ThemedText>
+              <ThemedText type="small" color="textSecondary" style={{ textAlign: 'center', fontSize: 11, lineHeight: 14 }}>
+                {badge.detail}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      </Card>
 
       <Card>
         <ThemedText type="heading">Mood, last 14 days</ThemedText>
@@ -192,6 +215,8 @@ function TrendBar({ label, value, color }: { label: string; value: number; color
 }
 
 const styles = StyleSheet.create({
+  badges: { flexDirection: 'row', flexWrap: 'wrap', rowGap: Spacing.three },
+  badge: { width: '33.33%', alignItems: 'center', gap: 2, paddingHorizontal: Spacing.one },
   trend: { gap: Spacing.one, paddingTop: Spacing.two },
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   trendLabel: { width: 96 },

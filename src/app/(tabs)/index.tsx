@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { MoodPicker } from '@/components/mood';
@@ -11,6 +11,7 @@ import { tipForDate } from '@/content/guides';
 import { recommendedGuideIds } from '@/content/interview';
 import { useTheme } from '@/hooks/use-theme';
 import { REST_DAYS_PER_WEEK, checkInStreak, habitStreak, isPlannedOn, restDaysUsedInWeek } from '@/lib/journal-math';
+import { badgeStatus, type Badge } from '@/lib/badges';
 import { useJournal } from '@/lib/journal-store';
 import type { Mood } from '@/lib/types';
 
@@ -31,12 +32,39 @@ export default function TodayScreen() {
     profile,
     restDays,
     challenge: activeChallenge,
+    habits,
+    finishedChallenges,
     saveEntry,
     setRestDay,
     completeChallengeStep,
   } = useJournal();
   const challenge = challengeById(activeChallenge?.id);
   const [finishedChallenge, setFinishedChallenge] = useState<string | null>(null);
+
+  // Celebrate badges earned while the app is open (after a check-in, rest day or challenge).
+  const earnedIds = useMemo(
+    () =>
+      badgeStatus({ entries, habits, restDays, finishedChallenges })
+        .filter((badge) => badge.earned)
+        .map((badge) => badge.id),
+    [entries, habits, restDays, finishedChallenges],
+  );
+  const seenBadges = useRef<Set<string> | null>(null);
+  const [celebrate, setCelebrate] = useState<Badge[]>([]);
+  useEffect(() => {
+    if (!ready) return;
+    if (seenBadges.current === null) {
+      seenBadges.current = new Set(earnedIds);
+      return;
+    }
+    const fresh = earnedIds.filter((id) => !seenBadges.current!.has(id));
+    if (fresh.length === 0) return;
+    fresh.forEach((id) => seenBadges.current!.add(id));
+    const all = badgeStatus({ entries, habits, restDays, finishedChallenges });
+    setCelebrate((current) => [...current, ...all.filter((badge) => fresh.includes(badge.id))]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, earnedIds]);
   const existing = entries[today];
 
   const [mood, setMood] = useState<Mood | null>(null);
@@ -269,6 +297,26 @@ export default function TodayScreen() {
           Pick a mood to save today's check-in.
         </ThemedText>
       )}
+
+      {celebrate.map((badge) => (
+        <Pressable
+          key={badge.id}
+          accessibilityRole="button"
+          accessibilityHint="Opens your badges"
+          onPress={() => {
+            setCelebrate((current) => current.filter((b) => b.id !== badge.id));
+            router.navigate('/history');
+          }}>
+          <Card style={[styles.tip, { backgroundColor: theme.accentSoft, borderColor: theme.accent }]}>
+            <Text style={styles.tipEmoji}>{badge.emoji}</Text>
+            <View style={{ flex: 1, gap: Spacing.half }}>
+              <ThemedText type="label" color="accent">New badge</ThemedText>
+              <ThemedText type="heading">{badge.title}</ThemedText>
+              <ThemedText type="small" color="textSecondary">{badge.detail} See all your badges ›</ThemedText>
+            </View>
+          </Card>
+        </Pressable>
+      ))}
 
       <Card style={styles.rest}>
         <Text style={styles.tipEmoji}>😌</Text>
