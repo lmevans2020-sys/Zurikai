@@ -69,7 +69,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/with-android-release-options.js"
     ],
     "experiments": {
       "typedRoutes": true,

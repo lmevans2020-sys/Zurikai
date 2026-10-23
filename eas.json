@@ -14,13 +14,15 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://steadythrive.expo.app"
-      }
+      },
+      "uploadSourceMaps": true
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://steadythrive.expo.app"
-      }
+      },
+      "uploadSourceMaps": true
     }
   },
   "submit": {
