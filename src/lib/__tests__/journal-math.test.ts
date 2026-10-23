@@ -10,6 +10,7 @@ import {
   moodTrends,
   offlineReflection,
   restDaysUsedInWeek,
+  shareableSummary,
   startOfWeek,
   summarizeWeek,
 } from '../journal-math.ts';
@@ -137,4 +138,20 @@ test('mood trends compare days with and without each habit', () => {
   assert.equal(trends[0].withoutHabit, 2);
   // Too few days: no trend.
   assert.equal(moodTrends(byDate(entry('2026-10-15', 5, ['move'])), habits, '2026-10-15').length, 0);
+});
+
+test('shareable summary covers the period and keeps notes private unless asked', () => {
+  const entries = byDate(
+    entry('2026-10-13', 2, ['water'], 'Bad sleep'),
+    entry('2026-10-20', 4, ['water', 'move']),
+    entry('2026-10-22', 5, ['move'], 'Great walk'),
+    entry('2026-09-01', 1, [], 'Too old'),
+  );
+  const summary = shareableSummary(entries, habits, '2026-10-22', 30, false);
+  assert.match(summary, /Check-ins: 3 of 30 days/);
+  assert.match(summary, /Average mood: 3\.7 out of 5/);
+  assert.match(summary, /Drink water: 2 days/);
+  assert.match(summary, /Harder days \(mood 1-2\): Tue, Oct 13/);
+  assert.doesNotMatch(summary, /Bad sleep|Too old/);
+  assert.match(shareableSummary(entries, habits, '2026-10-22', 30, true), /Great walk/);
 });

@@ -239,3 +239,61 @@ export function offlineReflection(summary: WeekSummary): string {
 
   return lines.join('\n\n');
 }
+
+/**
+ * A plain-text summary of a stretch of days that someone can share with a therapist or doctor.
+ * Notes are private by default and only included when asked for.
+ */
+export function shareableSummary(
+  entries: Record<string, Entry>,
+  habits: Habit[],
+  today: string,
+  days: number,
+  includeNotes: boolean,
+): string {
+  const from = addDays(today, -days + 1);
+  const list = Object.values(entries)
+    .filter((entry) => entry.date >= from && entry.date <= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const format = (key: string) =>
+    fromDateKey(key).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const lines = [`SteadyThrive summary: ${format(from)} to ${format(today)}`, ''];
+
+  if (list.length === 0) return [...lines, 'No check-ins in this period.'].join('\n');
+
+  const average = list.reduce((sum, entry) => sum + entry.mood, 0) / list.length;
+  lines.push(`Check-ins: ${list.length} of ${days} days`);
+  lines.push(`Average mood: ${average.toFixed(1)} out of 5 (1 = rough, 5 = great)`);
+
+  // Weekly averages show the direction things are moving.
+  const weeks = new Map<string, Entry[]>();
+  for (const entry of list) {
+    const week = startOfWeek(entry.date);
+    weeks.set(week, [...(weeks.get(week) ?? []), entry]);
+  }
+  if (weeks.size > 1) {
+    lines.push('', 'Mood by week:');
+    for (const [week, weekEntries] of weeks) {
+      const weekAverage = weekEntries.reduce((sum, entry) => sum + entry.mood, 0) / weekEntries.length;
+      lines.push(`- Week of ${format(week)}: ${weekAverage.toFixed(1)} (${weekEntries.length} check-ins)`);
+    }
+  }
+
+  const habitLines = habits
+    .map((habit) => ({ habit, count: list.filter((entry) => entry.habitIds.includes(habit.id)).length }))
+    .filter(({ count }) => count > 0)
+    .map(({ habit, count }) => `- ${habit.name}${habit.quit ? ' (staying away)' : ''}: ${count} days`);
+  if (habitLines.length) lines.push('', 'Habits:', ...habitLines);
+
+  const lowDays = list.filter((entry) => entry.mood <= 2).map((entry) => format(entry.date));
+  if (lowDays.length) lines.push('', `Harder days (mood 1-2): ${lowDays.join(', ')}`);
+
+  if (includeNotes) {
+    const notes = list.filter((entry) => entry.note.trim());
+    if (notes.length) {
+      lines.push('', 'Notes:');
+      for (const entry of notes) lines.push(`- ${format(entry.date)} (mood ${entry.mood}): ${entry.note.trim()}`);
+    }
+  }
+  return lines.join('\n');
+}

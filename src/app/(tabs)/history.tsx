@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Share, StyleSheet, Text, View } from 'react-native';
 
 import { moodEmoji } from '@/components/mood';
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
@@ -13,6 +13,7 @@ import {
   moodByWeekday,
   moodTrends,
   recentDays,
+  shareableSummary,
 } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
 import { usePremium } from '@/lib/premium';
@@ -31,6 +32,22 @@ export default function HistoryScreen() {
   const lastTwoWeeks = recentDays(entries, today, 14);
   const list = Object.values(entries).sort((a, b) => b.date.localeCompare(a.date));
   const habitById = Object.fromEntries(habits.map((habit) => [habit.id, habit]));
+
+  function shareSummary(includeNotes: boolean) {
+    const message = shareableSummary(entries, habits, today, 30, includeNotes);
+    Share.share({ title: 'My SteadyThrive summary', message }).catch(() => {});
+  }
+
+  function share() {
+    if (Platform.OS === 'web') {
+      shareSummary(false);
+      return;
+    }
+    Alert.alert('Include your notes?', 'Your daily notes can be personal. Leave them out if you prefer.', [
+      { text: 'Leave them out', onPress: () => shareSummary(false) },
+      { text: 'Include notes', onPress: () => shareSummary(true) },
+    ]);
+  }
 
   return (
     <Screen>
@@ -117,6 +134,14 @@ export default function HistoryScreen() {
             Your best day of the week so far: {WEEKDAYS[bestWeekday]} ({weekdays[bestWeekday]} out of 5).
           </ThemedText>
         )}
+      </Card>
+
+      <Card>
+        <ThemedText type="heading">🩺 Share with your therapist or doctor</ThemedText>
+        <ThemedText color="textSecondary">
+          A simple summary of the last 30 days: mood by week, habits and harder days. You choose who gets it.
+        </ThemedText>
+        <Button title="Share last 30 days" variant="secondary" onPress={share} disabled={list.length === 0} />
       </Card>
 
       {list.length === 0 ? (
