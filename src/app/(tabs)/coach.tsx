@@ -5,7 +5,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { requestReflection } from '@/lib/coach';
+import { requestLetter, requestReflection } from '@/lib/coach';
+import { monthKey, summarizeMonth } from '@/lib/letter';
 import { addDays, fromDateKey, startOfWeek, summarizeWeek } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
 import { usePremium } from '@/lib/premium';
@@ -17,9 +18,27 @@ function weekLabel(weekStart: string) {
 
 export default function CoachScreen() {
   const theme = useTheme();
-  const { chat, entries, habits, profile, reflections, today, saveReflection } = useJournal();
+  const { chat, entries, habits, profile, reflections, today, saveReflection, restDays, letters, coachMemory, saveLetter } =
+    useJournal();
   const { isPlus } = usePremium();
   const [loading, setLoading] = useState(false);
+  const [writingLetter, setWritingLetter] = useState(false);
+
+  const month = monthKey(today);
+  const monthSummary = summarizeMonth(entries, habits, restDays, month);
+  const letter = letters[month];
+  const pastLetters = Object.values(letters)
+    .filter((l) => l.month !== month)
+    .sort((a, b) => b.month.localeCompare(a.month));
+
+  async function writeLetter() {
+    setWritingLetter(true);
+    try {
+      saveLetter(await requestLetter(monthSummary, profile, coachMemory?.text));
+    } finally {
+      setWritingLetter(false);
+    }
+  }
 
   const weekStart = startOfWeek(today);
   const summary = summarizeWeek(entries, habits, weekStart);
@@ -107,6 +126,50 @@ export default function CoachScreen() {
             disabled={summary.daysLogged === 0}
           />
         </Card>
+      )}
+
+      {isPlus && (
+        <Card>
+          <ThemedText type="heading">✉️ Your letter for {monthSummary.label.split(' ')[0]}</ThemedText>
+          {letter ? (
+            <>
+              <ThemedText>{letter.text}</ThemedText>
+              {letter.source === 'offline' && (
+                <ThemedText type="small" color="textSecondary">
+                  Written offline because the coach couldn't be reached. Try again later for a personal letter.
+                </ThemedText>
+              )}
+              <Button title="Rewrite with the latest" variant="secondary" onPress={writeLetter} loading={writingLetter} />
+            </>
+          ) : (
+            <>
+              <ThemedText color="textSecondary">
+                Once a month your coach writes you a personal letter about your month: what went well, what
+                helped your mood, and what to try next.
+              </ThemedText>
+              <Button
+                title="Write my letter"
+                onPress={writeLetter}
+                loading={writingLetter}
+                disabled={monthSummary.daysLogged === 0}
+              />
+            </>
+          )}
+        </Card>
+      )}
+
+      {isPlus && pastLetters.length > 0 && (
+        <>
+          <ThemedText type="heading">Past letters</ThemedText>
+          {pastLetters.map((past) => (
+            <Card key={past.month}>
+              <ThemedText type="label" color="textSecondary">
+                {summarizeMonth({}, [], {}, past.month).label}
+              </ThemedText>
+              <ThemedText>{past.text}</ThemedText>
+            </Card>
+          ))}
+        </>
       )}
 
       {isPlus && past.length > 0 && (

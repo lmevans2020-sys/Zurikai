@@ -53,18 +53,21 @@ function describeChallenge(value: unknown): string | null {
   return `They're doing the "${challenge.title}" challenge, on step ${step + 1} of ${challenge.steps.length}: ${challenge.steps[step]}`;
 }
 
-function describeContext(profile: unknown, week: unknown, streak: unknown, challenge: unknown): string {
+function describeContext(profile: unknown, week: unknown, streak: unknown, challenge: unknown, memory: unknown): string {
   const parts = [
     describeProfile(profile) ? `About them:\n${describeProfile(profile)}` : null,
     isWeekSummary(week) ? `Their check-ins this week:\n${describeWeek(week)}` : null,
     typeof streak === 'number' ? `Current check-in streak: ${Math.max(0, Math.floor(streak))} days` : null,
     describeChallenge(challenge),
+    typeof memory === 'string' && memory.trim()
+      ? `Your own notes from earlier conversations with them:\n${memory.trim().slice(0, 1500)}`
+      : null,
   ].filter(Boolean);
   return parts.length ? parts.join('\n\n') : 'No details about this person yet.';
 }
 
 export async function POST(request: Request): Promise<Response> {
-  let body: { messages?: unknown; profile?: unknown; week?: unknown; streak?: unknown; challenge?: unknown };
+  let body: { messages?: unknown; profile?: unknown; week?: unknown; streak?: unknown; challenge?: unknown; memory?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -82,7 +85,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   return askCoach(
-    `${SYSTEM_PROMPT}\n\nWhat you know about this person (from the app, not typed by them in chat):\n${describeContext(body.profile, body.week, body.streak, body.challenge)}`,
+    `${SYSTEM_PROMPT}\n\nWhat you know about this person (from the app, not typed by them in chat):\n${describeContext(body.profile, body.week, body.streak, body.challenge, body.memory)}`,
     turns.map((turn) => ({ role: turn.role, content: turn.text.slice(0, MAX_MESSAGE_LENGTH) })),
     "Sorry, I can't help with that one. Is there something about your habits or how you're feeling I can help with?",
   );

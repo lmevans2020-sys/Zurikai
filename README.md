@@ -15,8 +15,8 @@ Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPho
 | **Welcome interview** | First open only: name, goals, daily rhythm, what gets in the way, coaching style. Suggests starter habits for those goals. Can be retaken from Settings. |
 | **Today** | Tip of the day (matched to your goals), mood, habits planned for today, a note, your streaks, and up to 2 rest days a week that keep streaks safe. |
 | **History** | Totals, current and best streak, a 14-day mood chart, Mood trends (Plus: which habits go with your better days) and every past check-in. |
-| **Coach** | SteadyThrive Plus: chat with the AI coach anytime, plus a weekly AI-written reflection. Both use your goals, check-ins and preferred coaching style. |
-| **Learn** | 13 short guides on building habits, with the ones that fit your goals at the top. |
+| **Coach** | SteadyThrive Plus: chat with the AI coach anytime (it keeps short notes so it remembers you), a weekly reflection and a monthly letter. All use your goals, check-ins and preferred coaching style. |
+| **Learn** | A one-minute breather, 5 guided challenges (one small step a day) and 13 short guides, with the ones that fit your goals first. |
 | **Reminders** | Tap a habit in Settings to get daily phone reminders: at set times, or every few hours within a time window (good for drinking water). |
 | **Settings** | Add habits to build or quit; tap one to pick its days, type and reminders. See your plan, erase data. |
 | **Paywall** | SteadyThrive Plus: $7.99 / month or $39.99 / year. |

@@ -12,7 +12,7 @@ import { describeReminders } from '@/lib/reminder-times';
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { activeHabits, profile, addHabit, archiveHabit, resetAll } = useJournal();
+  const { activeHabits, profile, addHabit, archiveHabit, resetAll, coachMemory, setCoachMemory } = useJournal();
   const { isPlus, plan, cancelForTesting } = usePremium();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
@@ -92,6 +92,29 @@ export default function SettingsScreen() {
             Coach style: {COACH_STYLES.find((style) => style.id === profile.coachStyle)?.label}
           </ThemedText>
           <Button title="Update my answers" variant="secondary" onPress={() => router.push('/welcome')} />
+        </Card>
+      )}
+
+      {isPlus && (
+        <Card>
+          <ThemedText type="heading">What your coach remembers</ThemedText>
+          <ThemedText color={coachMemory ? 'text' : 'textSecondary'}>
+            {coachMemory?.text ??
+              'Nothing yet. As you chat, your coach keeps a few short notes so it can pick up where you left off.'}
+          </ThemedText>
+          <ThemedText type="small" color="textSecondary">These notes stay on your phone.</ThemedText>
+          {coachMemory && (
+            <Button
+              title="Forget all of this"
+              variant="ghost"
+              onPress={() =>
+                Alert.alert('Clear your coach\'s notes?', 'Your coach will start fresh. Your chat history is not affected.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Forget', style: 'destructive', onPress: () => setCoachMemory(null) },
+                ])
+              }
+            />
+          )}
         </Card>
       )}
 

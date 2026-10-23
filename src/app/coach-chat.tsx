@@ -17,10 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { sendChat } from '@/lib/coach';
+import { sendChat, updateMemory } from '@/lib/coach';
 import { checkInStreak, startOfWeek, summarizeWeek } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
 import type { ChatMessage } from '@/lib/types';
+
+// How many new messages before the coach refreshes its notes about the person.
+const MEMORY_EVERY = 6;
 
 const STARTERS = [
   'I keep skipping my habits. Any advice?',
@@ -31,7 +34,19 @@ const STARTERS = [
 
 export default function CoachChatScreen() {
   const theme = useTheme();
-  const { chat, profile, entries, habits, today, restDays, challenge, addChatMessage, clearChat } = useJournal();
+  const {
+    chat,
+    profile,
+    entries,
+    habits,
+    today,
+    restDays,
+    challenge,
+    coachMemory,
+    addChatMessage,
+    clearChat,
+    setCoachMemory,
+  } = useJournal();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -54,9 +69,19 @@ export default function CoachChatScreen() {
       week: summarizeWeek(entries, habits, startOfWeek(today)),
       streak: checkInStreak(entries, today, restDays),
       challenge: challenge ? { id: challenge.id, done: challenge.done } : null,
+      memory: coachMemory?.text,
     });
     addChatMessage({ role: 'assistant', text: reply.text, failed: reply.failed });
     setSending(false);
+
+    // Every few messages, let the coach update its notes so it remembers next time.
+    const conversation = [...chat, userMessage, { ...userMessage, role: 'assistant' as const, text: reply.text }];
+    const lastUpdate = coachMemory?.updatedAt ?? '';
+    const newMessages = chat.filter((message) => message.createdAt > lastUpdate).length + 2;
+    if (!reply.failed && newMessages >= MEMORY_EVERY) {
+      const text = await updateMemory(coachMemory?.text ?? '', conversation.slice(-newMessages));
+      if (text) setCoachMemory({ text, updatedAt: new Date().toISOString() });
+    }
   }
 
   function confirmClear() {

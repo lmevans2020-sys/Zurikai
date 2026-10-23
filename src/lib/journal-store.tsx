@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { toDateKey } from '@/lib/journal-math';
 import { challengeById } from '@/content/challenges';
-import type { ActiveChallenge, ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
+import type { ActiveChallenge, ChatMessage, CoachMemory, Letter, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
@@ -19,6 +19,9 @@ type JournalData = {
   challenge: ActiveChallenge | null;
   /** Ids of challenges finished, in order. */
   finishedChallenges: string[];
+  coachMemory: CoachMemory | null;
+  /** Monthly letters from the coach, keyed by "YYYY-MM". */
+  letters: Record<string, Letter>;
 };
 
 // Keep the saved conversation small; only the latest turns are sent to the coach anyway.
@@ -41,6 +44,8 @@ function starterData(): JournalData {
     restDays: {},
     challenge: null,
     finishedChallenges: [],
+    coachMemory: null,
+    letters: {},
   };
 }
 
@@ -58,6 +63,9 @@ type JournalContextValue = JournalData & {
   /** Marks today's challenge step done. Finishing the last step completes the challenge. */
   completeChallengeStep: () => void;
   stopChallenge: () => void;
+  /** Pass null to make the coach forget. */
+  setCoachMemory: (memory: CoachMemory | null) => void;
+  saveLetter: (letter: Letter) => void;
   archiveHabit: (id: string) => void;
   /** Pass null to turn a habit's reminders off. */
   setHabitReminders: (id: string, reminders: HabitReminders | null) => void;
@@ -180,6 +188,16 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
   const stopChallenge = useCallback(() => setData((current) => ({ ...current, challenge: null })), []);
 
+  const setCoachMemory = useCallback<JournalContextValue['setCoachMemory']>(
+    (coachMemory) => setData((current) => ({ ...current, coachMemory })),
+    [],
+  );
+
+  const saveLetter = useCallback<JournalContextValue['saveLetter']>(
+    (letter) => setData((current) => ({ ...current, letters: { ...current.letters, [letter.month]: letter } })),
+    [],
+  );
+
   const saveReflection = useCallback<JournalContextValue['saveReflection']>((reflection) => {
     setData((current) => ({
       ...current,
@@ -229,6 +247,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       startChallenge,
       completeChallengeStep,
       stopChallenge,
+      setCoachMemory,
+      saveLetter,
       archiveHabit,
       setHabitReminders,
       saveReflection,
@@ -248,6 +268,8 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       startChallenge,
       completeChallengeStep,
       stopChallenge,
+      setCoachMemory,
+      saveLetter,
       archiveHabit,
       setHabitReminders,
       saveReflection,

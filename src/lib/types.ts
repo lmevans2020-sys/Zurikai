@@ -89,3 +89,17 @@ export type ActiveChallenge = {
   /** Date of the last step done, so there is at most one step a day. */
   lastDoneOn: string | null;
 };
+
+/** Short notes the coach keeps about someone between chats. Stays on the phone. */
+export type CoachMemory = {
+  text: string;
+  updatedAt: string;
+};
+
+export type Letter = {
+  /** "YYYY-MM" */
+  month: string;
+  text: string;
+  createdAt: string;
+  source: 'ai' | 'offline';
+};
