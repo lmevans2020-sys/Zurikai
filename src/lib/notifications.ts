@@ -10,3 +10,9 @@ export { cancelAllScheduledNotificationsAsync } from 'expo-notifications/build/c
 export { setNotificationChannelAsync } from 'expo-notifications/build/setNotificationChannelAsync';
 export { AndroidImportance } from 'expo-notifications/build/NotificationChannelManager.types';
 export { SchedulableTriggerInputTypes } from 'expo-notifications/build/Notifications.types';
+export { setNotificationCategoryAsync } from 'expo-notifications/build/setNotificationCategoryAsync';
+export {
+  addNotificationResponseReceivedListener,
+  clearLastNotificationResponseAsync,
+  getLastNotificationResponseAsync,
+} from 'expo-notifications/build/NotificationsEmitter';

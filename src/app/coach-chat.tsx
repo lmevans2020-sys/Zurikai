@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useMic } from '@/components/mic';
 import { ThemedText } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -50,6 +51,7 @@ export default function CoachChatScreen() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const { micButton, micStatus } = useMic(draft, setDraft);
 
   useEffect(() => {
     const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
@@ -141,7 +143,9 @@ export default function CoachChatScreen() {
           Your coach is an AI. It offers encouragement, not medical advice.
         </ThemedText>
 
+        {micStatus && <View style={{ paddingHorizontal: Spacing.three }}>{micStatus}</View>}
         <View style={[styles.inputBar, { borderColor: theme.border, backgroundColor: theme.background }]}>
+          {micButton}
           <TextInput
             value={draft}
             onChangeText={setDraft}

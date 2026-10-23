@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useMic } from '@/components/mic';
 import { MoodPicker } from '@/components/mood';
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
@@ -13,6 +14,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { REST_DAYS_PER_WEEK, checkInStreak, habitStreak, isPlannedOn, restDaysUsedInWeek } from '@/lib/journal-math';
 import { badgeStatus, type Badge } from '@/lib/badges';
 import { useJournal } from '@/lib/journal-store';
+import { doneToday } from '@/lib/ticks';
 import type { Mood } from '@/lib/types';
 
 function greeting() {
@@ -34,6 +36,8 @@ export default function TodayScreen() {
     challenge: activeChallenge,
     habits,
     finishedChallenges,
+    ticks,
+    tickHabit,
     saveEntry,
     setRestDay,
     completeChallengeStep,
@@ -68,7 +72,6 @@ export default function TodayScreen() {
   const existing = entries[today];
 
   const [mood, setMood] = useState<Mood | null>(null);
-  const [habitIds, setHabitIds] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [justSaved, setJustSaved] = useState(false);
 
@@ -76,7 +79,6 @@ export default function TodayScreen() {
   useEffect(() => {
     if (!ready || !existing) return;
     setMood(existing.mood);
-    setHabitIds(existing.habitIds);
     setNote(existing.note);
   }, [ready, existing]);
 
@@ -87,15 +89,19 @@ export default function TodayScreen() {
   const notToday = activeHabits.filter((habit) => !isPlannedOn(habit, today));
   const tip = tipForDate(today, recommendedGuideIds(profile));
   const firstName = profile?.name.split(' ')[0];
-  const dirty =
-    mood !== (existing?.mood ?? null) ||
-    note.trim() !== (existing?.note ?? '') ||
-    [...habitIds].sort().join() !== [...(existing?.habitIds ?? [])].sort().join();
+  // Habit ticks are saved the moment they're tapped (also from reminders and the widget), so
+  // only mood and note wait for the Save button.
+  const habitIds = doneToday(entries, ticks, today);
+  const dirty = mood !== (existing?.mood ?? null) || note.trim() !== (existing?.note ?? '');
+
+  const { micButton, micStatus } = useMic(note, (text) => {
+    setJustSaved(false);
+    setNote(text);
+  }, 40);
 
   function toggleHabit(id: string) {
     Haptics.selectionAsync().catch(() => {});
-    setJustSaved(false);
-    setHabitIds((current) => (current.includes(id) ? current.filter((h) => h !== id) : [...current, id]));
+    tickHabit(today, id, !habitIds.includes(id));
   }
 
   function save() {
@@ -272,7 +278,10 @@ export default function TodayScreen() {
       </Card>
 
       <Card>
-        <ThemedText type="heading">Anything on your mind?</ThemedText>
+        <View style={styles.noteHeader}>
+          <ThemedText type="heading" style={{ flex: 1 }}>Anything on your mind?</ThemedText>
+          {micButton}
+        </View>
         <TextInput
           value={note}
           onChangeText={(text) => {
@@ -285,6 +294,7 @@ export default function TodayScreen() {
           maxLength={600}
           style={[styles.note, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
         />
+        {micStatus}
       </Card>
 
       <Button
@@ -354,6 +364,7 @@ const styles = StyleSheet.create({
   tip: { flexDirection: 'row', gap: Spacing.three },
   tipEmoji: { fontSize: 28 },
   rest: { flexDirection: 'row', gap: Spacing.three },
+  noteHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   habit: {
     flexDirection: 'row',
     alignItems: 'center',

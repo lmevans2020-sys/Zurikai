@@ -41,6 +41,34 @@
         {
           "color": "#2F5D50"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "SteadyThrive uses the microphone so you can speak your notes and messages.",
+          "speechRecognitionPermission": "SteadyThrive turns your speech into text for your notes and messages.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Habits",
+              "label": "SteadyThrive habits",
+              "description": "Tick off today's habits from your home screen",
+              "minWidth": "250dp",
+              "minHeight": "180dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

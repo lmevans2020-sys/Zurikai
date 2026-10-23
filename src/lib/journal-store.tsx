@@ -1,13 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 
 import { toDateKey } from '@/lib/journal-math';
+import { setTick, type Ticks } from '@/lib/ticks';
 import { challengeById } from '@/content/challenges';
 import type { ActiveChallenge, ChatMessage, CoachMemory, Letter, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
-const STORAGE_KEY = 'zurikai/journal/v1';
+export const STORAGE_KEY = 'zurikai/journal/v1';
 
 type JournalData = {
   profile: Profile | null;
@@ -22,6 +24,8 @@ type JournalData = {
   coachMemory: CoachMemory | null;
   /** Monthly letters from the coach, keyed by "YYYY-MM". */
   letters: Record<string, Letter>;
+  /** Habits ticked from a reminder or the widget before that day's check-in (see ticks.ts). */
+  ticks: Ticks;
 };
 
 // Keep the saved conversation small; only the latest turns are sent to the coach anyway.
@@ -46,6 +50,7 @@ function starterData(): JournalData {
     finishedChallenges: [],
     coachMemory: null,
     letters: {},
+    ticks: {},
   };
 }
 
@@ -66,6 +71,8 @@ type JournalContextValue = JournalData & {
   /** Pass null to make the coach forget. */
   setCoachMemory: (memory: CoachMemory | null) => void;
   saveLetter: (letter: Letter) => void;
+  /** Ticks or unticks one habit for a day without a full check-in. */
+  tickHabit: (date: string, habitId: string, done: boolean) => void;
   archiveHabit: (id: string) => void;
   /** Pass null to turn a habit's reminders off. */
   setHabitReminders: (id: string, reminders: HabitReminders | null) => void;
@@ -98,6 +105,18 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       })
       .catch((error) => console.warn('Could not load journal', error))
       .finally(() => setReady(true));
+
+    // The home-screen widget can change saved data while the app is in the background, so pick
+    // up its changes when the app comes back. Nothing is lost: every change here is saved at once.
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      AsyncStorage.getItem(STORAGE_KEY)
+        .then((raw) => {
+          if (raw) setData({ ...starterData(), ...JSON.parse(raw) });
+        })
+        .catch(() => {});
+    });
+    return () => subscription.remove();
   }, []);
 
   // Write through on every change once the first load is done, so nothing is lost if the
@@ -112,6 +131,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
   const saveEntry = useCallback<JournalContextValue['saveEntry']>((date, entry) => {
     setData((current) => ({
       ...current,
+      ticks: Object.fromEntries(Object.entries(current.ticks).filter(([key]) => key !== date)),
       entries: {
         ...current.entries,
         [date]: { date, ...entry, note: entry.note.trim(), updatedAt: new Date().toISOString() },
@@ -198,6 +218,10 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const tickHabit = useCallback<JournalContextValue['tickHabit']>((date, habitId, done) => {
+    setData((current) => ({ ...current, ...setTick(current.entries, current.ticks, date, habitId, done) }));
+  }, []);
+
   const saveReflection = useCallback<JournalContextValue['saveReflection']>((reflection) => {
     setData((current) => ({
       ...current,
@@ -249,6 +273,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       stopChallenge,
       setCoachMemory,
       saveLetter,
+      tickHabit,
       archiveHabit,
       setHabitReminders,
       saveReflection,
@@ -270,6 +295,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       stopChallenge,
       setCoachMemory,
       saveLetter,
+      tickHabit,
       archiveHabit,
       setHabitReminders,
       saveReflection,

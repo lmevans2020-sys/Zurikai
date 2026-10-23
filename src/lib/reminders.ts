@@ -8,6 +8,11 @@ import type { Habit } from '@/lib/types';
 
 const CHANNEL_ID = 'habit-reminders';
 
+// Reminders carry a "Done" button that ticks the habit off for today.
+const BUILD_CATEGORY = 'habit-reminder';
+const QUIT_CATEGORY = 'quit-reminder';
+const DONE_ACTION = 'done';
+
 // iPhones keep at most 64 scheduled notifications per app; stay safely under that.
 const MAX_SCHEDULED = 60;
 
@@ -94,6 +99,8 @@ async function replaceScheduled(habits: Habit[]): Promise<void> {
   const permission = await Notifications.getPermissionsAsync();
   if (!permission.granted) return;
 
+  await setUpDoneButtons();
+
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: 'Habit reminders',
@@ -111,6 +118,7 @@ async function replaceScheduled(habits: Habit[]): Promise<void> {
           title: `${habit.emoji} ${habit.name}`,
           body: habit.quit ? QUIT_NUDGES[index % QUIT_NUDGES.length] : NUDGES[index % NUDGES.length],
           data: { habitId: habit.id },
+          categoryIdentifier: habit.quit ? QUIT_CATEGORY : BUILD_CATEGORY,
         },
         // Weekday numbers here run 1 (Sunday) to 7 (Saturday).
         trigger:
@@ -120,4 +128,50 @@ async function replaceScheduled(habits: Habit[]): Promise<void> {
       });
     }),
   );
+}
+
+let buttonsReady = false;
+
+async function setUpDoneButtons() {
+  if (!Notifications || buttonsReady) return;
+  try {
+    // Opening the app is the reliable way for the tick to be saved, so the button does that.
+    const options = { opensAppToForeground: true };
+    await Notifications.setNotificationCategoryAsync(BUILD_CATEGORY, [
+      { identifier: DONE_ACTION, buttonTitle: 'Done ✓', options },
+    ]);
+    await Notifications.setNotificationCategoryAsync(QUIT_CATEGORY, [
+      { identifier: DONE_ACTION, buttonTitle: 'Still going strong ✓', options },
+    ]);
+    buttonsReady = true;
+  } catch (error) {
+    // Buttons are a nice extra; reminders still work without them (e.g. in Expo Go).
+    console.warn('Reminder buttons unavailable', error);
+  }
+}
+
+/**
+ * Calls `onDone(habitId)` when someone taps "Done" on a reminder, including the tap that
+ * opened the app. Returns a function that stops listening.
+ */
+export function listenForReminderDone(onDone: (habitId: string) => void): () => void {
+  if (!Notifications) return () => {};
+  const api = Notifications;
+  const handled = new Set<string>();
+  const handle = (response: { actionIdentifier: string; notification: { request: { identifier: string; content: { data?: unknown } } } } | null) => {
+    if (!response || response.actionIdentifier !== DONE_ACTION) return;
+    const key = `${response.notification.request.identifier}:${new Date().toDateString()}`;
+    if (handled.has(key)) return;
+    handled.add(key);
+    const habitId = (response.notification.request.content.data as { habitId?: unknown } | undefined)?.habitId;
+    if (typeof habitId === 'string') onDone(habitId);
+    api.clearLastNotificationResponseAsync().catch(() => {});
+  };
+  try {
+    api.getLastNotificationResponseAsync().then(handle).catch(() => {});
+    const subscription = api.addNotificationResponseReceivedListener(handle);
+    return () => subscription.remove();
+  } catch {
+    return () => {};
+  }
 }

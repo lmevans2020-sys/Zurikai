@@ -3,15 +3,17 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { toDateKey } from '@/lib/journal-math';
 import { JournalProvider, useJournal } from '@/lib/journal-store';
 import { PremiumProvider } from '@/lib/premium';
-import { syncReminders } from '@/lib/reminders';
+import { listenForReminderDone, syncReminders } from '@/lib/reminders';
+import { refreshHabitsWidget } from '@/widget';
 
 SplashScreen.preventAutoHideAsync();
 
 // New people go through the welcome interview before they reach the app.
 function AppStack() {
-  const { ready, profile, activeHabits } = useJournal();
+  const { ready, profile, activeHabits, entries, ticks, restDays, tickHabit } = useJournal();
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
@@ -27,6 +29,17 @@ function AppStack() {
     syncReminders(activeHabits).catch((error) => console.warn('Could not schedule reminders', error));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, reminderKey]);
+
+  // Keep the home-screen widget in step with the app.
+  useEffect(() => {
+    if (ready) refreshHabitsWidget();
+  }, [ready, activeHabits, entries, ticks, restDays]);
+
+  // "Done" on a reminder ticks that habit off for today.
+  useEffect(() => {
+    if (!ready) return;
+    return listenForReminderDone((habitId) => tickHabit(toDateKey(new Date()), habitId, true));
+  }, [ready, tickHabit]);
 
   // Keep the splash screen up until saved data has loaded, so the interview doesn't flash.
   if (!ready) return null;
