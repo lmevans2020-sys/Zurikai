@@ -15,7 +15,8 @@ Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPho
 | **History** | Totals, current and best streak, a 14-day mood chart and every past check-in. |
 | **Coach** | Zurikai Plus: chat with the AI coach anytime, plus a weekly AI-written reflection. Both use your goals, check-ins and preferred coaching style. |
 | **Learn** | 13 short guides on building habits, with the ones that fit your goals at the top. |
-| **Settings** | Add or remove habits, see your plan, erase data. |
+| **Reminders** | Tap a habit in Settings to get daily phone reminders: at set times, or every few hours within a time window (good for drinking water). |
+| **Settings** | Add or remove habits, set reminders, see your plan, erase data. |
 | **Paywall** | Zurikai Plus: $7.99 / month or $39.99 / year. |
 
 Free plan: unlimited check-ins, up to 3 habits. Plus: weekly AI coach and unlimited habits.
@@ -80,13 +81,15 @@ npx eas-cli@latest submit --platform all
 
 ```bash
 npm run typecheck   # TypeScript
-npm test            # unit tests for streaks and weekly summaries (src/lib/__tests__)
+npm test            # unit tests for streaks, summaries, content and reminder times (src/lib/__tests__)
 ```
 
 - Screens live in `src/app` (Expo Router). `(tabs)/` holds the five tabs, `welcome.tsx` is the
   first-run interview, `guides/[id].tsx` shows one guide, and `paywall.tsx` is a modal.
 - Guides, daily tips and the interview questions are plain data in `src/content/`, so new content
   can be added without touching screen code.
+- `src/lib/reminders.ts` schedules habit reminders as local notifications (expo-notifications) and
+  re-syncs them whenever habits change; `reminder-times.ts` holds the pure time helpers.
 - `src/lib/journal-store.tsx` is the on-device data store; `journal-math.ts` holds the pure
   streak and summary logic.
 - `src/app/api/reflection+api.ts` (weekly reflection) and `src/app/api/chat+api.ts` (coach chat)

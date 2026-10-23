@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { toDateKey } from '@/lib/journal-math';
-import type { ChatMessage, Entry, Habit, Mood, Profile, Reflection } from '@/lib/types';
+import type { ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
@@ -43,6 +43,8 @@ type JournalContextValue = JournalData & {
   saveEntry: (date: string, entry: { mood: Mood; habitIds: string[]; note: string }) => void;
   addHabit: (name: string, emoji: string) => void;
   archiveHabit: (id: string) => void;
+  /** Pass null to turn a habit's reminders off. */
+  setHabitReminders: (id: string, reminders: HabitReminders | null) => void;
   saveReflection: (reflection: Reflection) => void;
   /**
    * Saves the welcome interview. `habits` is the full list the person chose: entries with an
@@ -111,6 +113,15 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const setHabitReminders = useCallback<JournalContextValue['setHabitReminders']>((id, reminders) => {
+    setData((current) => ({
+      ...current,
+      habits: current.habits.map((habit) =>
+        habit.id === id ? { ...habit, reminders: reminders ?? undefined } : habit,
+      ),
+    }));
+  }, []);
+
   const saveReflection = useCallback<JournalContextValue['saveReflection']>((reflection) => {
     setData((current) => ({
       ...current,
@@ -156,6 +167,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       saveEntry,
       addHabit,
       archiveHabit,
+      setHabitReminders,
       saveReflection,
       completeInterview,
       addChatMessage,
@@ -169,6 +181,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       saveEntry,
       addHabit,
       archiveHabit,
+      setHabitReminders,
       saveReflection,
       completeInterview,
       addChatMessage,

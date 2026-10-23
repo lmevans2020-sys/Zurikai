@@ -7,7 +7,17 @@ export type Habit = {
   emoji: string;
   createdAt: string;
   archived?: boolean;
+  /** Daily phone reminders for this habit. Missing or undefined means none. */
+  reminders?: HabitReminders;
 };
+
+/**
+ * Either specific times of day ("08:00", "19:00"), or a repeat such as every 2 hours from
+ * 8 AM to 8 PM. Times are 24-hour "HH:MM" in local time.
+ */
+export type HabitReminders =
+  | { kind: 'times'; times: string[] }
+  | { kind: 'repeat'; everyHours: number; start: string; end: string };
 
 /** One check-in per calendar day, keyed by its local date (YYYY-MM-DD). */
 export type Entry = {

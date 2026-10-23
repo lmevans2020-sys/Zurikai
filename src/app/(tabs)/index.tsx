@@ -139,6 +139,13 @@ export default function TodayScreen() {
             </Pressable>
           );
         })}
+        {activeHabits.length > 0 && !activeHabits.some((habit) => habit.reminders) && (
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.navigate('/settings')}>
+            <ThemedText type="small" color="accent" style={{ fontWeight: '600' }}>
+              ⏰ Want a nudge? Set daily reminders
+            </ThemedText>
+          </Pressable>
+        )}
       </Card>
 
       <Card>

@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useJournal } from '@/lib/journal-store';
 import { COACH_STYLES, goalLabels } from '@/content/interview';
 import { FREE_HABIT_LIMIT, PLANS, usePremium } from '@/lib/premium';
+import { describeReminders } from '@/lib/reminder-times';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -94,10 +95,20 @@ export default function SettingsScreen() {
 
       <Card>
         <ThemedText type="heading">Your habits</ThemedText>
+        <ThemedText type="small" color="textSecondary">Tap a habit to set daily reminders.</ThemedText>
         {activeHabits.map((habit) => (
           <View key={habit.id} style={[styles.habitRow, { borderColor: theme.border }]}>
             <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
-            <ThemedText style={{ flex: 1 }}>{habit.name}</ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Set reminders for this habit"
+              style={{ flex: 1, gap: 2 }}
+              onPress={() => router.push({ pathname: '/reminders/[id]', params: { id: habit.id } })}>
+              <ThemedText>{habit.name}</ThemedText>
+              <ThemedText type="small" color={habit.reminders ? 'textSecondary' : 'accent'}>
+                {habit.reminders ? `⏰ ${describeReminders(habit.reminders)}` : '⏰ Set a reminder'}
+              </ThemedText>
+            </Pressable>
             <Pressable accessibilityRole="button" onPress={() => confirmRemove(habit.id, habit.name)} hitSlop={8}>
               <ThemedText type="small" color="danger">Remove</ThemedText>
             </Pressable>
