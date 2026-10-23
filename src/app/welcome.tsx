@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Choice } from '@/components/choice';
@@ -14,6 +14,8 @@ import type { CoachStyle, GoalId, ObstacleId, Profile } from '@/lib/types';
 
 const MAX_GOALS = 3;
 const STEPS = 6;
+// Navy from the SteadyThrive logo's wordmark.
+const LOGO_NAVY = '#1F4E79';
 
 type HabitOption = { key: string; id?: string; name: string; emoji: string };
 
@@ -111,17 +113,28 @@ export default function WelcomeScreen() {
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {step === 0 && (
             <>
-              <Text style={styles.bigEmoji}>👋</Text>
               {editing ? (
-                <ThemedText type="title">Update your plan</ThemedText>
+                <>
+                  <Text style={styles.bigEmoji}>👋</Text>
+                  <ThemedText type="title">Update your plan</ThemedText>
+                </>
               ) : (
                 <>
-                  <View style={{ gap: Spacing.half }}>
-                    <ThemedText type="title">Welcome to SteadyThrive</ThemedText>
-                    <ThemedText type="small" color="textSecondary">by Zurikai</ThemedText>
+                  <View style={styles.logoCard}>
+                    <Image
+                      source={require('../../assets/images/logo.png')}
+                      accessibilityLabel="SteadyThrive"
+                      resizeMode="contain"
+                      style={styles.logo}
+                    />
+                    <ThemedText type="small" style={{ color: '#5B6B66' }}>by Zurikai</ThemedText>
                   </View>
-                  <ThemedText type="heading" color="accent">Every feeling matters. Every small step counts.</ThemedText>
-                  <ThemedText>Track your moods, build healthy habits, and discover what helps you thrive.</ThemedText>
+                  <ThemedText type="heading" style={{ color: LOGO_NAVY, textAlign: 'center' }}>
+                    Every feeling matters. Every small step counts.
+                  </ThemedText>
+                  <ThemedText style={{ textAlign: 'center' }}>
+                    Track your moods, build healthy habits, and discover what helps you thrive.
+                  </ThemedText>
                 </>
               )}
               <ThemedText color="textSecondary">
@@ -289,6 +302,15 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   bigEmoji: { fontSize: 56 },
+  logoCard: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    backgroundColor: '#FFFFFF',
+    borderRadius: Radius.large,
+    paddingVertical: Spacing.three,
+    gap: Spacing.one,
+  },
+  logo: { width: 260, height: 260 * (366 / 492) },
   input: { borderWidth: 1, borderRadius: Radius.small, paddingHorizontal: Spacing.three, height: 50, fontSize: 16 },
   multiline: { height: 96, paddingTop: Spacing.three, textAlignVertical: 'top' },
   footer: {
