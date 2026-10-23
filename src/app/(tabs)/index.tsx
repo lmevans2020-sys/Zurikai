@@ -114,6 +114,24 @@ export default function TodayScreen() {
         />
       </Card>
 
+      {mood !== null && mood <= 2 && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/breathe')}
+          style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+          <Card style={styles.tip}>
+            <Text style={styles.tipEmoji}>🌬️</Text>
+            <View style={{ flex: 1, gap: Spacing.half }}>
+              <ThemedText type="heading">Rough moment?</ThemedText>
+              <ThemedText type="small" color="textSecondary">
+                Try a one-minute breather. It can take the edge off.
+              </ThemedText>
+              <ThemedText type="small" color="accent" style={{ fontWeight: '600' }}>Start ›</ThemedText>
+            </View>
+          </Card>
+        </Pressable>
+      )}
+
       <Card>
         <ThemedText type="heading">Today's habits</ThemedText>
         {activeHabits.length === 0 && (

@@ -39,6 +39,19 @@ export default function LearnScreen() {
         <ThemedText color="textSecondary">Short guides on building habits that last.</ThemedText>
       </View>
 
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/breathe')}
+        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+        <Card style={styles.row}>
+          <Text style={styles.emoji}>🌬️</Text>
+          <View style={{ flex: 1, gap: Spacing.half }}>
+            <ThemedText type="heading">One-minute breather</ThemedText>
+            <ThemedText type="small" color="textSecondary">A guided breath for stressful moments</ThemedText>
+          </View>
+        </Card>
+      </Pressable>
+
       {recommended.length > 0 && (
         <>
           <ThemedText type="label" color="accent">Recommended for you</ThemedText>
