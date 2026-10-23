@@ -70,7 +70,15 @@
           ]
         }
       ],
-      "./plugins/with-android-release-options.js"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": false,
+            "extraProguardRules": "# WorkManager (used by the home-screen widget) creates its Room database by reflection.\n-keep class androidx.work.** { *; }\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.room.** { *; }"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
