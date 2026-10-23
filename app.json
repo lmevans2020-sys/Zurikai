@@ -74,6 +74,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "owner": "zurikai",
+    "extra": {
+      "eas": {
+        "projectId": "18c94190-5304-4872-8db9-adb193d8b65a"
+      }
     }
   }
 }
