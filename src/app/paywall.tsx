@@ -41,7 +41,7 @@ export default function PaywallScreen() {
 
         <View style={{ alignItems: 'center', gap: Spacing.two }}>
           <Text style={{ fontSize: 48 }}>✨</Text>
-          <ThemedText type="title" style={{ textAlign: 'center' }}>Zurikai Plus</ThemedText>
+          <ThemedText type="title" style={{ textAlign: 'center' }}>SteadyThrive Plus</ThemedText>
           <ThemedText color="textSecondary" style={{ textAlign: 'center' }}>
             Build habits that stick, with a coach in your pocket.
           </ThemedText>

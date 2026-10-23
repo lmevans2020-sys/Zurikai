@@ -6,7 +6,7 @@ import { askCoach, describeProfile, describeWeek, GUIDE_LIST, isWeekSummary, SAF
 const MAX_TURNS = 20;
 const MAX_MESSAGE_LENGTH = 1000;
 
-const SYSTEM_PROMPT = `You are the coach inside Zurikai, a habit and mood journal app. People chat with you
+const SYSTEM_PROMPT = `You are the coach inside SteadyThrive (by Zurikai), a habit and mood journal app. People chat with you
 for encouragement and practical advice on building habits, staying consistent and looking after
 their mood.
 

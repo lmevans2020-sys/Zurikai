@@ -68,7 +68,7 @@ export default function SettingsScreen() {
         <ThemedText type="label" color="textSecondary">Membership</ThemedText>
         {isPlus ? (
           <>
-            <ThemedText type="heading">Zurikai Plus ✨</ThemedText>
+            <ThemedText type="heading">SteadyThrive Plus ✨</ThemedText>
             <ThemedText color="textSecondary">{PLANS.find((p) => p.id === plan)?.price}</ThemedText>
           </>
         ) : (
@@ -77,7 +77,7 @@ export default function SettingsScreen() {
             <ThemedText color="textSecondary">
               Up to {FREE_HABIT_LIMIT} habits. Upgrade for weekly AI coaching and unlimited habits.
             </ThemedText>
-            <Button title="See Zurikai Plus" onPress={() => router.push('/paywall')} />
+            <Button title="See SteadyThrive Plus" onPress={() => router.push('/paywall')} />
           </>
         )}
       </Card>
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
       <Card>
         <ThemedText type="heading">About</ThemedText>
         <ThemedText color="textSecondary">
-          Your journal is stored on this phone. Zurikai's coach offers encouragement, not medical
+          Your journal is stored on this phone. SteadyThrive's coach offers encouragement, not medical
           advice. If you're struggling, please reach out to someone you trust or a local support line.
         </ThemedText>
       </Card>

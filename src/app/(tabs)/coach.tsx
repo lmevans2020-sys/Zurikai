@@ -73,13 +73,13 @@ export default function CoachScreen() {
       {!isPlus ? (
         <Card style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
           <Text style={{ fontSize: 40 }}>🧭</Text>
-          <ThemedText type="heading" style={{ textAlign: 'center' }}>Your AI coach is part of Zurikai Plus</ThemedText>
+          <ThemedText type="heading" style={{ textAlign: 'center' }}>Your AI coach is part of SteadyThrive Plus</ThemedText>
           <ThemedText color="textSecondary" style={{ textAlign: 'center' }}>
             Chat with your coach anytime for advice that fits your goals, and get a weekly
             reflection on what's working.
           </ThemedText>
           <View style={{ alignSelf: 'stretch', marginTop: Spacing.two }}>
-            <Button title="Try Zurikai Plus" onPress={() => router.push('/paywall')} />
+            <Button title="Try SteadyThrive Plus" onPress={() => router.push('/paywall')} />
           </View>
         </Card>
       ) : current ? (

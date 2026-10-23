@@ -62,7 +62,7 @@ export default function RemindersScreen() {
     if (remindersSupported() && !allowed) {
       Alert.alert(
         'Notifications are off',
-        'Your reminders are saved, but your phone is blocking Zurikai from showing them. Turn on notifications in your phone settings.',
+        'Your reminders are saved, but your phone is blocking SteadyThrive from showing them. Turn on notifications in your phone settings.',
         [
           { text: 'Not now', style: 'cancel', onPress: () => router.back() },
           { text: 'Open settings', onPress: () => { Linking.openSettings(); router.back(); } },
@@ -185,7 +185,7 @@ export default function RemindersScreen() {
 
       {!remindersSupported() && (
         <ThemedText type="small" color="textSecondary">
-          Reminders aren't available here. They work in the Zurikai app on a phone.
+          Reminders aren't available here. They work in the SteadyThrive app on a phone.
         </ThemedText>
       )}
 

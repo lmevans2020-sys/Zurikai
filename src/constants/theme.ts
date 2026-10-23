@@ -1,5 +1,5 @@
 /**
- * Zurikai's colors, spacing and type. Every screen reads colors through `useTheme()`
+ * SteadyThrive's colors, spacing and type. Every screen reads colors through `useTheme()`
  * so light and dark mode stay in sync.
  */
 

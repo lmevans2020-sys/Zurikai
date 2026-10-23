@@ -1,4 +1,6 @@
-# Zurikai
+# SteadyThrive by Zurikai
+
+> Every feeling matters. Every small step counts.
 
 A habit and mood journal with a gentle AI coach. Check in once a day (how you feel, which
 habits you kept, a short note), build streaks, and every week get a personal reflection on
@@ -13,11 +15,11 @@ Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPho
 | **Welcome interview** | First open only: name, goals, daily rhythm, what gets in the way, coaching style. Suggests starter habits for those goals. Can be retaken from Settings. |
 | **Today** | Tip of the day (matched to your goals), mood, habits, a note, and your streaks. |
 | **History** | Totals, current and best streak, a 14-day mood chart and every past check-in. |
-| **Coach** | Zurikai Plus: chat with the AI coach anytime, plus a weekly AI-written reflection. Both use your goals, check-ins and preferred coaching style. |
+| **Coach** | SteadyThrive Plus: chat with the AI coach anytime, plus a weekly AI-written reflection. Both use your goals, check-ins and preferred coaching style. |
 | **Learn** | 13 short guides on building habits, with the ones that fit your goals at the top. |
 | **Reminders** | Tap a habit in Settings to get daily phone reminders: at set times, or every few hours within a time window (good for drinking water). |
 | **Settings** | Add or remove habits, set reminders, see your plan, erase data. |
-| **Paywall** | Zurikai Plus: $7.99 / month or $39.99 / year. |
+| **Paywall** | SteadyThrive Plus: $7.99 / month or $39.99 / year. |
 
 Free plan: unlimited check-ins, up to 3 habits. Plus: weekly AI coach and unlimited habits.
 

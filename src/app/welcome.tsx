@@ -112,7 +112,18 @@ export default function WelcomeScreen() {
           {step === 0 && (
             <>
               <Text style={styles.bigEmoji}>👋</Text>
-              <ThemedText type="title">{editing ? 'Update your plan' : 'Welcome to Zurikai'}</ThemedText>
+              {editing ? (
+                <ThemedText type="title">Update your plan</ThemedText>
+              ) : (
+                <>
+                  <View style={{ gap: Spacing.half }}>
+                    <ThemedText type="title">Welcome to SteadyThrive</ThemedText>
+                    <ThemedText type="small" color="textSecondary">by Zurikai</ThemedText>
+                  </View>
+                  <ThemedText type="heading" color="accent">Every feeling matters. Every small step counts.</ThemedText>
+                  <ThemedText>Track your moods, build healthy habits, and discover what helps you thrive.</ThemedText>
+                </>
+              )}
               <ThemedText color="textSecondary">
                 A few quick questions so your coach, tips and habits fit your life. It takes about a minute.
               </ThemedText>

@@ -3,7 +3,7 @@ import type { WeekSummary } from '@/lib/types';
 
 // Server-only route: writes the weekly coach reflection with Claude.
 
-const SYSTEM_PROMPT = `You are the coach inside Zurikai, a habit and mood journal.
+const SYSTEM_PROMPT = `You are the coach inside SteadyThrive (by Zurikai), a habit and mood journal.
 Each week you read a short summary of someone's check-ins and write them a reflection.
 
 Write 120 to 180 words in plain, warm, second-person language, like a thoughtful friend who

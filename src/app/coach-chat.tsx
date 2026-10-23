@@ -83,7 +83,7 @@ export default function CoachChatScreen() {
         <ScrollView ref={scrollRef} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
           <Bubble
             role="assistant"
-            text={`Hi${firstName ? ` ${firstName}` : ''}! I'm your Zurikai coach. Ask me anything about building habits, staying on track or how you're feeling. What's on your mind?`}
+            text={`Hi${firstName ? ` ${firstName}` : ''}! I'm your SteadyThrive coach. Ask me anything about building habits, staying on track or how you're feeling. What's on your mind?`}
           />
 
           {chat.length === 0 && (

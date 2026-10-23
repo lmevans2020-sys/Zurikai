@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-// Zurikai Plus: what the subscription unlocks, and how it's bought.
+// SteadyThrive Plus: what the subscription unlocks, and how it's bought.
 //
 // For now the purchase is simulated on the device so the whole flow can be tried in Expo Go.
 // To take real payments, replace `purchase` and `restore` with RevenueCat

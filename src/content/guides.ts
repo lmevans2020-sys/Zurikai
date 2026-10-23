@@ -112,7 +112,7 @@ export const GUIDES: Guide[] = [
       '• Movement. Even a short walk can lift your mood. You don\'t need a full workout for it to count.',
       '• Daylight. Getting outside early in the day can help your sleep and energy.',
       '• Connection. A short chat or message with someone you care about makes a real difference.',
-      'Everyone is different, which is why Zurikai asks for your mood alongside your habits. After a few weeks, look at your History and your weekly Coach reflection. Do your better days line up with certain habits? That\'s your personal recipe.',
+      'Everyone is different, which is why SteadyThrive asks for your mood alongside your habits. After a few weeks, look at your History and your weekly Coach reflection. Do your better days line up with certain habits? That\'s your personal recipe.',
     ],
     tryThis: 'Add one mood-lifting habit to your list in Settings, like "10 minutes outside".',
   },
