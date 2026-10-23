@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { toDateKey } from '@/lib/journal-math';
-import type { Entry, Habit, Mood, Profile, Reflection } from '@/lib/types';
+import type { ChatMessage, Entry, Habit, Mood, Profile, Reflection } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
@@ -13,7 +13,11 @@ type JournalData = {
   habits: Habit[];
   entries: Record<string, Entry>;
   reflections: Record<string, Reflection>;
+  chat: ChatMessage[];
 };
+
+// Keep the saved conversation small; only the latest turns are sent to the coach anyway.
+const MAX_SAVED_CHAT = 200;
 
 const STARTER_HABITS: Omit<Habit, 'createdAt'>[] = [
   { id: 'water', name: 'Drink water', emoji: '💧' },
@@ -28,6 +32,7 @@ function starterData(): JournalData {
     habits: STARTER_HABITS.map((habit) => ({ ...habit, createdAt })),
     entries: {},
     reflections: {},
+    chat: [],
   };
 }
 
@@ -44,10 +49,12 @@ type JournalContextValue = JournalData & {
    * `id` are existing habits to keep, the rest are created. Active habits not chosen are archived.
    */
   completeInterview: (profile: Profile, habits: { id?: string; name: string; emoji: string }[]) => void;
+  addChatMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'>) => void;
+  clearChat: () => void;
   resetAll: () => void;
 };
 
-function newHabitId() {
+function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
@@ -88,7 +95,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
 
   const addHabit = useCallback<JournalContextValue['addHabit']>((name, emoji) => {
     const habit: Habit = {
-      id: newHabitId(),
+      id: newId(),
       name: name.trim(),
       emoji: emoji.trim() || '✨',
       createdAt: new Date().toISOString(),
@@ -117,7 +124,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       const createdAt = new Date().toISOString();
       const created: Habit[] = chosen
         .filter((habit) => !habit.id)
-        .map((habit) => ({ id: newHabitId(), name: habit.name, emoji: habit.emoji, createdAt }));
+        .map((habit) => ({ id: newId(), name: habit.name, emoji: habit.emoji, createdAt }));
       return {
         ...current,
         profile,
@@ -130,6 +137,13 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       };
     });
   }, []);
+
+  const addChatMessage = useCallback<JournalContextValue['addChatMessage']>((message) => {
+    const full: ChatMessage = { ...message, id: newId(), createdAt: new Date().toISOString() };
+    setData((current) => ({ ...current, chat: [...current.chat, full].slice(-MAX_SAVED_CHAT) }));
+  }, []);
+
+  const clearChat = useCallback(() => setData((current) => ({ ...current, chat: [] })), []);
 
   const resetAll = useCallback(() => setData(starterData()), []);
 
@@ -144,9 +158,23 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       archiveHabit,
       saveReflection,
       completeInterview,
+      addChatMessage,
+      clearChat,
       resetAll,
     }),
-    [data, ready, today, saveEntry, addHabit, archiveHabit, saveReflection, completeInterview, resetAll],
+    [
+      data,
+      ready,
+      today,
+      saveEntry,
+      addHabit,
+      archiveHabit,
+      saveReflection,
+      completeInterview,
+      addChatMessage,
+      clearChat,
+      resetAll,
+    ],
   );
 
   return <JournalContext.Provider value={value}>{children}</JournalContext.Provider>;

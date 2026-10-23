@@ -23,6 +23,7 @@ function AppStack() {
       <Stack.Protected guard={profile !== null}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="guides/[id]" />
+        <Stack.Screen name="coach-chat" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack.Protected>
       <Stack.Screen name="welcome" options={{ gestureEnabled: profile !== null }} />

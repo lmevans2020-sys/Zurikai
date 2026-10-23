@@ -53,3 +53,12 @@ export type Profile = {
   about: string;
   completedAt: string;
 };
+
+export type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  createdAt: string;
+  /** Set on a coach message that is an error notice rather than a real reply. */
+  failed?: boolean;
+};

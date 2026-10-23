@@ -23,7 +23,8 @@ export const PLANS: Plan[] = [
 ];
 
 export const PLUS_FEATURES = [
-  { emoji: '🧭', title: 'Weekly AI coach', detail: 'A personal reflection on your week, every week.' },
+  { emoji: '💬', title: 'Chat with your AI coach', detail: 'Advice that fits your goals, whenever you need it.' },
+  { emoji: '🧭', title: 'Weekly reflections', detail: 'A personal look at your week, every week.' },
   { emoji: '♾️', title: 'Unlimited habits', detail: `Track more than ${FREE_HABIT_LIMIT} habits at once.` },
   { emoji: '📈', title: 'Mood trends', detail: 'See patterns between your habits and how you feel.' },
 ];

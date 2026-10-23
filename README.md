@@ -13,7 +13,7 @@ Built with [Expo](https://expo.dev) (React Native), so one codebase runs on iPho
 | **Welcome interview** | First open only: name, goals, daily rhythm, what gets in the way, coaching style. Suggests starter habits for those goals. Can be retaken from Settings. |
 | **Today** | Tip of the day (matched to your goals), mood, habits, a note, and your streaks. |
 | **History** | Totals, current and best streak, a 14-day mood chart and every past check-in. |
-| **Coach** | Zurikai Plus: a weekly AI-written reflection on your check-ins, shaped by your goals and preferred coaching style. |
+| **Coach** | Zurikai Plus: chat with the AI coach anytime, plus a weekly AI-written reflection. Both use your goals, check-ins and preferred coaching style. |
 | **Learn** | 13 short guides on building habits, with the ones that fit your goals at the top. |
 | **Settings** | Add or remove habits, see your plan, erase data. |
 | **Paywall** | Zurikai Plus: $7.99 / month or $39.99 / year. |
@@ -39,14 +39,15 @@ The app opens in Expo Go. Edits to the code show up on your phone right away.
 
 ### Turning on the AI coach
 
-Without setup the Coach tab still works but writes a simpler, built-in summary. For real AI
-reflections:
+Without setup the weekly reflection falls back to a simpler built-in summary, and the coach chat
+says it isn't connected yet. To turn on the real AI coach:
 
 1. Create an API key at [console.anthropic.com](https://console.anthropic.com).
 2. Copy `.env.example` to a new file named `.env` and paste the key after `ANTHROPIC_API_KEY=`.
 3. Restart `npx expo start`.
 
-The key stays on the server (`src/app/api/reflection+api.ts`) and is never put inside the app.
+The key stays on the server (`src/app/api/`) and is never put inside the app. Each chat reply
+costs roughly a cent in AI usage.
 
 ## Getting into the App Store and Google Play
 
@@ -63,8 +64,8 @@ Still to do before launch:
 - **Real payments.** `src/lib/premium.tsx` currently simulates purchases so the flow can be
   tried in Expo Go. Swap in RevenueCat (`react-native-purchases`) once the store products exist.
   This needs a development build (`npx eas-cli@latest build --profile development`).
-- **Protect the coach server.** Add sign-in or a per-user limit to the reflection endpoint so
-  only paying users can call it.
+- **Protect the coach server.** Add sign-in or a per-user limit to the chat and reflection
+  endpoints so only paying users can call them and costs stay predictable.
 - **App icon and splash screen.** Replace the placeholder images in `assets/`.
 - **Privacy policy and store listing** (screenshots, description). Both stores require them.
 
@@ -88,5 +89,6 @@ npm test            # unit tests for streaks and weekly summaries (src/lib/__tes
   can be added without touching screen code.
 - `src/lib/journal-store.tsx` is the on-device data store; `journal-math.ts` holds the pure
   streak and summary logic.
-- `src/app/api/reflection+api.ts` is the server route that asks Claude for the weekly reflection.
-  `src/lib/coach.ts` calls it and falls back to an offline summary if it can't be reached.
+- `src/app/api/reflection+api.ts` (weekly reflection) and `src/app/api/chat+api.ts` (coach chat)
+  are server routes that call Claude through `src/lib/coach-server.ts`, which holds the shared
+  safety rules and prompt helpers. `src/lib/coach.ts` is the app side that calls them.

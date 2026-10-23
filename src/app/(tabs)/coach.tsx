@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { requestReflection } from '@/lib/coach';
 import { addDays, fromDateKey, startOfWeek, summarizeWeek } from '@/lib/journal-math';
 import { useJournal } from '@/lib/journal-store';
@@ -15,7 +16,8 @@ function weekLabel(weekStart: string) {
 }
 
 export default function CoachScreen() {
-  const { entries, habits, profile, reflections, today, saveReflection } = useJournal();
+  const theme = useTheme();
+  const { chat, entries, habits, profile, reflections, today, saveReflection } = useJournal();
   const { isPlus } = usePremium();
   const [loading, setLoading] = useState(false);
 
@@ -39,8 +41,26 @@ export default function CoachScreen() {
     <Screen>
       <View>
         <ThemedText type="title">Your coach</ThemedText>
-        <ThemedText color="textSecondary">A reflection on your week, written just for you.</ThemedText>
+        <ThemedText color="textSecondary">Chat anytime, plus a reflection on your week written just for you.</ThemedText>
       </View>
+
+      {isPlus && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/coach-chat')}
+          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          <Card style={[styles.chatCard, { backgroundColor: theme.accent, borderColor: theme.accent }]}>
+            <Text style={{ fontSize: 32 }}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="heading" style={{ color: theme.accentText }}>Chat with your coach</ThemedText>
+              <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.85 }}>
+                {chat.length ? 'Pick up where you left off' : 'Ask for advice, talk through a tough day, or plan your week'}
+              </ThemedText>
+            </View>
+            <ThemedText type="heading" style={{ color: theme.accentText }}>›</ThemedText>
+          </Card>
+        </Pressable>
+      )}
 
       <Card>
         <ThemedText type="label" color="textSecondary">This week · {weekLabel(weekStart)}</ThemedText>
@@ -53,9 +73,10 @@ export default function CoachScreen() {
       {!isPlus ? (
         <Card style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
           <Text style={{ fontSize: 40 }}>🧭</Text>
-          <ThemedText type="heading" style={{ textAlign: 'center' }}>Weekly coaching is part of Zurikai Plus</ThemedText>
+          <ThemedText type="heading" style={{ textAlign: 'center' }}>Your AI coach is part of Zurikai Plus</ThemedText>
           <ThemedText color="textSecondary" style={{ textAlign: 'center' }}>
-            Every week your coach reads your check-ins and helps you spot what's working.
+            Chat with your coach anytime for advice that fits your goals, and get a weekly
+            reflection on what's working.
           </ThemedText>
           <View style={{ alignSelf: 'stretch', marginTop: Spacing.two }}>
             <Button title="Try Zurikai Plus" onPress={() => router.push('/paywall')} />
@@ -105,4 +126,5 @@ export default function CoachScreen() {
 
 const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: Spacing.four, flexWrap: 'wrap' },
+  chatCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
 });
