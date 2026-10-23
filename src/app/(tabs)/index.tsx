@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MoodPicker } from '@/components/mood';
 import { Button, Card, Screen, ThemedText } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
+import { challengeById } from '@/content/challenges';
 import { tipForDate } from '@/content/guides';
 import { recommendedGuideIds } from '@/content/interview';
 import { useTheme } from '@/hooks/use-theme';
@@ -22,7 +23,20 @@ function greeting() {
 
 export default function TodayScreen() {
   const theme = useTheme();
-  const { ready, today, entries, activeHabits, profile, restDays, saveEntry, setRestDay } = useJournal();
+  const {
+    ready,
+    today,
+    entries,
+    activeHabits,
+    profile,
+    restDays,
+    challenge: activeChallenge,
+    saveEntry,
+    setRestDay,
+    completeChallengeStep,
+  } = useJournal();
+  const challenge = challengeById(activeChallenge?.id);
+  const [finishedChallenge, setFinishedChallenge] = useState<string | null>(null);
   const existing = entries[today];
 
   const [mood, setMood] = useState<Mood | null>(null);
@@ -102,6 +116,49 @@ export default function TodayScreen() {
           </View>
         </Card>
       </Pressable>
+
+      {challenge && activeChallenge && (
+        <Card style={styles.tip}>
+          <Text style={styles.tipEmoji}>{challenge.emoji}</Text>
+          <View style={{ flex: 1, gap: Spacing.half }}>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push({ pathname: '/challenges/[id]', params: { id: challenge.id } })}>
+              <ThemedText type="label" color="textSecondary">
+                {challenge.title} · Step {activeChallenge.done + 1} of {challenge.steps.length} ›
+              </ThemedText>
+            </Pressable>
+            {activeChallenge.lastDoneOn === today ? (
+              <ThemedText color="textSecondary">Done for today ✓ Your next step shows up tomorrow.</ThemedText>
+            ) : (
+              <>
+                <ThemedText>{challenge.steps[activeChallenge.done]}</ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                    if (activeChallenge.done + 1 >= challenge.steps.length) setFinishedChallenge(challenge.title);
+                    completeChallengeStep();
+                  }}>
+                  <ThemedText type="small" color="accent" style={{ fontWeight: '600' }}>Mark today's step done</ThemedText>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </Card>
+      )}
+      {finishedChallenge && (
+        <Card style={[styles.tip, { backgroundColor: theme.accentSoft, borderColor: theme.accent }]}>
+          <Text style={styles.tipEmoji}>🎉</Text>
+          <View style={{ flex: 1, gap: Spacing.half }}>
+            <ThemedText type="heading">You finished {finishedChallenge}!</ThemedText>
+            <ThemedText type="small" color="textSecondary">
+              That's real follow-through. Pick another in the Learn tab whenever you're ready.
+            </ThemedText>
+          </View>
+        </Card>
+      )}
 
       <Card>
         <ThemedText type="heading">How are you feeling?</ThemedText>

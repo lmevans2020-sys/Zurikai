@@ -49,3 +49,14 @@ test('daily tip is stable for a day and leans toward recommended guides', () => 
   const matching = days.filter((day) => preferred.includes(tipForDate(day, preferred).guideId)).length;
   assert.ok(matching >= 20, `expected most tips to match goals, got ${matching}/30`);
 });
+
+test('challenges have unique ids, real goals and a step for each day', async () => {
+  const { CHALLENGES, sortedChallenges } = await import('../../content/challenges.ts');
+  const goalIds = new Set(GOALS.map((goal) => goal.id));
+  assert.equal(new Set(CHALLENGES.map((c) => c.id)).size, CHALLENGES.length);
+  for (const challenge of CHALLENGES) {
+    assert.ok(challenge.steps.length >= 5, challenge.id);
+    assert.ok(challenge.goals.every((goal) => goalIds.has(goal)), challenge.id);
+  }
+  assert.equal(sortedChallenges(['sleep'])[0].id, 'sleep-reset');
+});

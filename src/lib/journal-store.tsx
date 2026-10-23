@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { toDateKey } from '@/lib/journal-math';
-import type { ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
+import { challengeById } from '@/content/challenges';
+import type { ActiveChallenge, ChatMessage, Entry, Habit, HabitReminders, Mood, Profile, Reflection, RestDays } from '@/lib/types';
 
 // Everything is stored on the device for now. When accounts are added, this is the one file
 // that needs to sync to a server.
@@ -15,6 +16,9 @@ type JournalData = {
   reflections: Record<string, Reflection>;
   chat: ChatMessage[];
   restDays: RestDays;
+  challenge: ActiveChallenge | null;
+  /** Ids of challenges finished, in order. */
+  finishedChallenges: string[];
 };
 
 // Keep the saved conversation small; only the latest turns are sent to the coach anyway.
@@ -35,6 +39,8 @@ function starterData(): JournalData {
     reflections: {},
     chat: [],
     restDays: {},
+    challenge: null,
+    finishedChallenges: [],
   };
 }
 
@@ -48,6 +54,10 @@ type JournalContextValue = JournalData & {
   updateHabit: (id: string, changes: Partial<Pick<Habit, 'name' | 'emoji' | 'quit' | 'days'>>) => void;
   /** Marks or unmarks a day as a rest day. */
   setRestDay: (date: string, resting: boolean) => void;
+  startChallenge: (id: string) => void;
+  /** Marks today's challenge step done. Finishing the last step completes the challenge. */
+  completeChallengeStep: () => void;
+  stopChallenge: () => void;
   archiveHabit: (id: string) => void;
   /** Pass null to turn a habit's reminders off. */
   setHabitReminders: (id: string, reminders: HabitReminders | null) => void;
@@ -145,6 +155,31 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const startChallenge = useCallback<JournalContextValue['startChallenge']>(
+    (id) =>
+      setData((current) => ({
+        ...current,
+        challenge: { id, startedOn: toDateKey(new Date()), done: 0, lastDoneOn: null },
+      })),
+    [],
+  );
+
+  const completeChallengeStep = useCallback(() => {
+    setData((current) => {
+      const active = current.challenge;
+      const challenge = challengeById(active?.id);
+      const day = toDateKey(new Date());
+      if (!active || !challenge || active.lastDoneOn === day) return current;
+      const done = active.done + 1;
+      if (done >= challenge.steps.length) {
+        return { ...current, challenge: null, finishedChallenges: [...current.finishedChallenges, challenge.id] };
+      }
+      return { ...current, challenge: { ...active, done, lastDoneOn: day } };
+    });
+  }, []);
+
+  const stopChallenge = useCallback(() => setData((current) => ({ ...current, challenge: null })), []);
+
   const saveReflection = useCallback<JournalContextValue['saveReflection']>((reflection) => {
     setData((current) => ({
       ...current,
@@ -191,6 +226,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       addHabit,
       updateHabit,
       setRestDay,
+      startChallenge,
+      completeChallengeStep,
+      stopChallenge,
       archiveHabit,
       setHabitReminders,
       saveReflection,
@@ -207,6 +245,9 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       addHabit,
       updateHabit,
       setRestDay,
+      startChallenge,
+      completeChallengeStep,
+      stopChallenge,
       archiveHabit,
       setHabitReminders,
       saveReflection,

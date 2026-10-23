@@ -38,6 +38,7 @@ function AppStack() {
         <Stack.Screen name="guides/[id]" />
         <Stack.Screen name="coach-chat" />
         <Stack.Screen name="breathe" />
+        <Stack.Screen name="challenges/[id]" />
         <Stack.Screen name="habits/[id]" />
         <Stack.Screen name="reminders/[id]" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />

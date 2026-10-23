@@ -27,7 +27,7 @@ export async function requestReflection(summary: WeekSummary, profile: Profile |
 /** Sends the conversation to the coach and returns its reply, or a friendly error to show. */
 export async function sendChat(
   messages: ChatMessage[],
-  context: { profile: Profile | null; week: WeekSummary; streak: number },
+  context: { profile: Profile | null; week: WeekSummary; streak: number; challenge?: { id: string; done: number } | null },
 ): Promise<{ text: string; failed: boolean }> {
   try {
     const response = await fetch(`${API_BASE}/api/chat`, {

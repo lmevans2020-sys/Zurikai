@@ -79,3 +79,13 @@ export type ChatMessage = {
   /** Set on a coach message that is an error notice rather than a real reply. */
   failed?: boolean;
 };
+
+/** The guided challenge someone is doing now (see src/content/challenges.ts). */
+export type ActiveChallenge = {
+  id: string;
+  startedOn: string;
+  /** How many steps are done. The next step is steps[done]. */
+  done: number;
+  /** Date of the last step done, so there is at most one step a day. */
+  lastDoneOn: string | null;
+};

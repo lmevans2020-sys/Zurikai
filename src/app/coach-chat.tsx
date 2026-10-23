@@ -31,7 +31,7 @@ const STARTERS = [
 
 export default function CoachChatScreen() {
   const theme = useTheme();
-  const { chat, profile, entries, habits, today, restDays, addChatMessage, clearChat } = useJournal();
+  const { chat, profile, entries, habits, today, restDays, challenge, addChatMessage, clearChat } = useJournal();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -53,6 +53,7 @@ export default function CoachChatScreen() {
       profile,
       week: summarizeWeek(entries, habits, startOfWeek(today)),
       streak: checkInStreak(entries, today, restDays),
+      challenge: challenge ? { id: challenge.id, done: challenge.done } : null,
     });
     addChatMessage({ role: 'assistant', text: reply.text, failed: reply.failed });
     setSending(false);

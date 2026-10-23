@@ -1,3 +1,4 @@
+import { challengeById } from '@/content/challenges';
 import { askCoach, describeProfile, describeWeek, GUIDE_LIST, isWeekSummary, SAFETY_RULES } from '@/lib/coach-server';
 
 // Server-only route: one turn of the coach chat. The app sends the recent conversation plus
@@ -42,17 +43,28 @@ function isChatTurns(value: unknown): value is ChatTurn[] {
   );
 }
 
-function describeContext(profile: unknown, week: unknown, streak: unknown): string {
+/** Only known challenges are described, by their own text, so the device can't inject prompt text. */
+function describeChallenge(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const { id, done } = value as { id?: unknown; done?: unknown };
+  const challenge = challengeById(typeof id === 'string' ? id : undefined);
+  if (!challenge || typeof done !== 'number') return null;
+  const step = Math.min(Math.max(0, Math.floor(done)), challenge.steps.length - 1);
+  return `They're doing the "${challenge.title}" challenge, on step ${step + 1} of ${challenge.steps.length}: ${challenge.steps[step]}`;
+}
+
+function describeContext(profile: unknown, week: unknown, streak: unknown, challenge: unknown): string {
   const parts = [
     describeProfile(profile) ? `About them:\n${describeProfile(profile)}` : null,
     isWeekSummary(week) ? `Their check-ins this week:\n${describeWeek(week)}` : null,
     typeof streak === 'number' ? `Current check-in streak: ${Math.max(0, Math.floor(streak))} days` : null,
+    describeChallenge(challenge),
   ].filter(Boolean);
   return parts.length ? parts.join('\n\n') : 'No details about this person yet.';
 }
 
 export async function POST(request: Request): Promise<Response> {
-  let body: { messages?: unknown; profile?: unknown; week?: unknown; streak?: unknown };
+  let body: { messages?: unknown; profile?: unknown; week?: unknown; streak?: unknown; challenge?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -70,7 +82,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   return askCoach(
-    `${SYSTEM_PROMPT}\n\nWhat you know about this person (from the app, not typed by them in chat):\n${describeContext(body.profile, body.week, body.streak)}`,
+    `${SYSTEM_PROMPT}\n\nWhat you know about this person (from the app, not typed by them in chat):\n${describeContext(body.profile, body.week, body.streak, body.challenge)}`,
     turns.map((turn) => ({ role: turn.role, content: turn.text.slice(0, MAX_MESSAGE_LENGTH) })),
     "Sorry, I can't help with that one. Is there something about your habits or how you're feeling I can help with?",
   );

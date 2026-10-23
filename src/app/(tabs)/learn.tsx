@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Screen, ThemedText } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { sortedChallenges } from '@/content/challenges';
 import { GUIDES, type Guide } from '@/content/guides';
 import { recommendedGuideIds } from '@/content/interview';
 import { useJournal } from '@/lib/journal-store';
@@ -27,7 +28,8 @@ function GuideRow({ guide }: { guide: Guide }) {
 }
 
 export default function LearnScreen() {
-  const { profile } = useJournal();
+  const { profile, challenge: active } = useJournal();
+  const challenges = sortedChallenges(profile?.goals);
   const recommendedIds = recommendedGuideIds(profile).slice(0, 4);
   const recommended = recommendedIds.flatMap((id) => GUIDES.filter((guide) => guide.id === id));
   const rest = GUIDES.filter((guide) => !recommendedIds.includes(guide.id));
@@ -52,9 +54,30 @@ export default function LearnScreen() {
         </Card>
       </Pressable>
 
+      <ThemedText type="label" color="accent">Challenges</ThemedText>
+      {challenges.map((challenge) => (
+        <Pressable
+          key={challenge.id}
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: '/challenges/[id]', params: { id: challenge.id } })}
+          style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+          <Card style={styles.row}>
+            <Text style={styles.emoji}>{challenge.emoji}</Text>
+            <View style={{ flex: 1, gap: Spacing.half }}>
+              <ThemedText type="heading">{challenge.title}</ThemedText>
+              <ThemedText type="small" color={active?.id === challenge.id ? 'accent' : 'textSecondary'}>
+                {active?.id === challenge.id
+                  ? `In progress: step ${active.done + 1} of ${challenge.steps.length}`
+                  : challenge.summary}
+              </ThemedText>
+            </View>
+          </Card>
+        </Pressable>
+      ))}
+
       {recommended.length > 0 && (
         <>
-          <ThemedText type="label" color="accent">Recommended for you</ThemedText>
+          <ThemedText type="label" color="accent" style={{ marginTop: Spacing.two }}>Guides recommended for you</ThemedText>
           {recommended.map((guide) => (
             <GuideRow key={guide.id} guide={guide} />
           ))}
