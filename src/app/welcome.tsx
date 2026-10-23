@@ -7,6 +7,7 @@ import { Choice } from '@/components/choice';
 import { Button, ThemedText } from '@/components/ui';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { BUSYNESS, COACH_STYLES, GOALS, OBSTACLES, RHYTHMS, suggestedHabits } from '@/content/interview';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { useJournal } from '@/lib/journal-store';
 import { FREE_HABIT_LIMIT, usePremium } from '@/lib/premium';
@@ -14,8 +15,9 @@ import type { CoachStyle, GoalId, ObstacleId, Profile } from '@/lib/types';
 
 const MAX_GOALS = 3;
 const STEPS = 6;
-// Navy from the SteadyThrive logo's wordmark.
-const LOGO_NAVY = '#1F4E79';
+// Teal from the SteadyThrive logo's wordmark: the logo's own shade on dark backgrounds, a deeper
+// one on light backgrounds so the tagline stays easy to read.
+const LOGO_TEAL = { light: '#1E8C7A', dark: '#32B8A2' };
 
 type HabitOption = { key: string; id?: string; name: string; emoji: string };
 
@@ -26,6 +28,7 @@ function toggle<T>(list: T[], value: T, max = Infinity) {
 
 export default function WelcomeScreen() {
   const theme = useTheme();
+  const scheme = useColorScheme();
   const { profile: existing, activeHabits, entries, completeInterview } = useJournal();
   const { isPlus } = usePremium();
   const editing = existing !== null;
@@ -129,7 +132,7 @@ export default function WelcomeScreen() {
                     />
                     <ThemedText type="small" style={{ color: '#5B6B66' }}>by Zurikai</ThemedText>
                   </View>
-                  <ThemedText type="heading" style={{ color: LOGO_NAVY, textAlign: 'center' }}>
+                  <ThemedText type="heading" style={{ color: scheme === 'dark' ? LOGO_TEAL.dark : LOGO_TEAL.light, textAlign: 'center' }}>
                     Every feeling matters. Every small step counts.
                   </ThemedText>
                   <ThemedText style={{ textAlign: 'center' }}>
