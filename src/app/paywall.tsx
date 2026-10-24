@@ -92,6 +92,12 @@ export default function PaywallScreen() {
           })}
         </View>
 
+        {/* Remove this note when real payments (RevenueCat) are connected. */}
+        <View style={[styles.testNote, { backgroundColor: theme.accentSoft }]}>
+          <ThemedText type="small" style={{ textAlign: 'center', fontWeight: '600' }}>
+            🧪 Test version: Plus is free and you won't be charged.
+          </ThemedText>
+        </View>
         <Button title="Continue" onPress={subscribe} loading={busy} />
         <Button title="Restore purchases" variant="ghost" onPress={restorePurchases} />
         <ThemedText type="small" color="textSecondary" style={{ textAlign: 'center' }}>
@@ -104,6 +110,7 @@ export default function PaywallScreen() {
 }
 
 const styles = StyleSheet.create({
+  testNote: { borderRadius: 12, padding: 12 },
   container: {
     width: '100%',
     maxWidth: MaxContentWidth,
